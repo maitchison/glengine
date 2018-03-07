@@ -2,23 +2,20 @@
 
 todo:
 
-[done] terrain
-better keyboard controls
-house
-lights
-camera movement
+build house
 
-5 objects
-[done] turtle
-bird
+surface of revolution
 
-turtle in water
-bird in sky
+proper day / night cycle
+physics based movement (i.e. jumping, walking up blocks etc)
+textures on terrain
+5 objects inside house
 
-shadows
+roaming animals (turtles and birds)
+graphic for sun (just a yellow sphere)
+alternative camera view (from turtles perspective)
 skybox
 
-animate the water (plasma)
 
 */
 
@@ -36,12 +33,14 @@ int frameOn = 0;
 
 GLuint grass_texture;
 GLuint water_texture;
+siv::PerlinNoise noise = siv::PerlinNoise(123);
 
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
 
 Camera camera = Camera();
 SceneGraph graph = SceneGraph();
+Light* sunLight;
 
 void initTextures(void)
 {
@@ -49,17 +48,74 @@ void initTextures(void)
 	water_texture = loadTexture("water.png");
 }
 
+void initLights(void)
+{
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	//glEnable(GL_COLOR_MATERIAL);
+
+	sunLight = new Light(GL_LIGHT0);
+	sunLight->position = Vec3(10, 20, 0);
+	graph.Add(sunLight);
+}
+
 void initTerrain(void)
 {
-	graph.Add(new Cube());
+	// we generate blocks as follows...
+	// first calculate the height values.
+	// then put grass on top, and dirt under
+	// sand is used for water level.
+
+
+	Material* grass = new Material(Color(0x009933));
+	Material* dirt = new Material(Color(0x996633));
+	Material* sand = new Material(Color(0xcccc00));
+	Material* water = new Material(Color(0x2964c4));
+
+	water->diffuse.a = 0.95f;
+	water->shininess = 40;
+
+	for (int x = 0; x < 41; x ++) {
+		for (int z = 0; z < 41; z ++) {
+
+			int height = (int)(10.0*noise.octaveNoise(x/100.0, z/100.0, 8) - 3.0);
+
+			if (height <= 1) {
+				// grass on top, dirt under neith
+				Cube* cube = new Cube();
+				cube->position = Vec3(x-20,height,z-20);
+				cube->material = sand;
+				graph.Add(cube);
+			} else {
+				// grass on top, dirt under neith
+				Cube* cube = new Cube();
+				cube->position = Vec3(x-20,height,z-20);
+				cube->material = grass;
+				graph.Add(cube);
+
+				cube = new Cube();
+				cube->position = Vec3(x-20,height - 1,z-20);
+				cube->material = dirt;
+				graph.Add(cube);
+			}
+		}
+	}
+
+	// add water plane
+	Cube* ocean = new Cube();
+	ocean->position = Vec3(0,-1.25,0);
+	ocean->scale = Vec3(41.1,5,41.1);
+	ocean->material = water;
+	graph.Add(ocean);
+
 }
 
 void initialize(void)
 {
 	glClearColor(0.1f, 0.0f, 0.5f, 1.0f);
-	glDisable(GL_LIGHTING);
 	glEnable(GL_DEPTH);
 	glEnable(GL_DEPTH_TEST);
+	initLights();
 	initTextures();
 	initTerrain();
 }
@@ -75,10 +131,9 @@ void display(void)
 	glLoadIdentity();
 	gluPerspective(70.0f, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 1000);
 
-	// setup camera transformation
 	graph.Render(camera);
 
-	glFlush();
+	glutSwapBuffers();
 }
 
 void update(void)
@@ -95,6 +150,9 @@ void update(void)
 	if (counter % 100 == 0) {
 		printf("fps %f\n", 1.0 / elapsed);
 	}
+
+	// stub: update light position
+	sunLight->position = Vec3(sin(currentTime)*30, cos(currentTime)*30,0);
 
 	glutPostRedisplay();
 	lastFrameTime = currentTime;
@@ -135,7 +193,7 @@ void keyboard(unsigned char key, int x, int y)
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_SINGLE | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 	glutInitWindowPosition(0, 0);
 	glutCreateWindow("MYHOUSE");

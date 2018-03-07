@@ -33,5 +33,35 @@ public:
 struct Color
 {
 public:
-    float r,g,b,a;
+
+    union {
+        struct {
+            float r,g,b,a;
+        };
+        float values[4];
+    };
+
+
+    Color(float r, float g, float b, float a=1)
+    {
+        this->r = r;
+        this->g = g;
+        this->b = b;
+        this->a = a;
+    }
+
+    Color()
+    {
+        r = g = b = 1;
+        a = 1;
+    }
+
+    Color(uint hex)
+    {
+        b = (hex & 0xff) / 255.0;
+        g = ((hex >> 8) & 0xff) / 255.0;
+        r = ((hex >> 16) & 0xff) / 255.0;
+        a = 1.0;
+    }
+
 };
