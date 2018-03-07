@@ -1,24 +1,6 @@
-
-#ifdef __linux__
-#include <GL/freeglut.h>
-#elif __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#include <GL/gl.h>
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <cmath>
-#include <stdint.h>
-#include <algorithm>
-#include <limits>
-#include <vector>
-#include <time.h>
+#include "stdinc.h"
 
 #include "utils.h"
-
 #include "objects.h"
 
 Object::Object()
@@ -39,7 +21,7 @@ void Object::Draw(void)
 
 void Object::drawObject(void)
 {
-    // pass    
+    // pass
 }
 
 

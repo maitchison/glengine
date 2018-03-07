@@ -1,10 +1,12 @@
+#pragma once
+
 /**
 3d Objects used as part of a scene graph
 */
 
 #include <vector>
 
-#include "vec.hpp"
+#include "stdinc.h"
 
 class Object
 {

@@ -6,7 +6,7 @@ todo:
 better keyboard controls
 house
 lights
-camera movement 
+camera movement
 
 5 objects
 [done] turtle
@@ -22,26 +22,12 @@ animate the water (plasma)
 
 */
 
-#define _USE_MATH_DEFINES
-
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#include <GL/gl.h>
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <cmath>
-#include <stdint.h>
-#include <algorithm>
-#include <limits>
-#include <vector>
-#include <time.h>
+#include "stdinc.h"
 
 #include "PerlinNoise.hpp"
 #include "utils.h"
+
+#include "scenegraph.h"
 
 float lastFrameTime = 0.0f;
 float currentTime = 0.0f;
@@ -51,67 +37,21 @@ int frameOn = 0;
 GLuint grass_texture;
 GLuint water_texture;
 
-const int TERRAIN_DIVISIONS = 50;
-
-float terrain[TERRAIN_DIVISIONS * TERRAIN_DIVISIONS] = {};
-
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
 
-siv::PerlinNoise perlin = siv::PerlinNoise();
-
-struct Camera
-{
-	float x;
-	float y;
-	float z;
-
-	// camera yAngle in radians.
-	float yAngle;
-
-	void apply(void)
-	{
-		gluLookAt(x, y, z, x + sin(yAngle), y, z + -cos(yAngle), 0, 1, 0);
-	}
-
-	void move(float amount)
-	{
-		x += sin(yAngle) * amount;
-		z -= cos(yAngle) * amount;
-	}
-
-	void pan(float amount)
-	{
-		x += cos(yAngle) * amount;
-		z += sin(yAngle) * amount;
-	}
-
-	Camera()
-	{
-		x = 0;
-		y = 0;
-		z = 0;
-		yAngle = 0;
-	}
-};
-
 Camera camera = Camera();
-
-// generates our terrain
-void initTerrain(void)
-{
-	for (int z = 0; z < TERRAIN_DIVISIONS; z++) {
-		for (int x = 0; x < TERRAIN_DIVISIONS; x++) {
-			terrain[x + z * TERRAIN_DIVISIONS] = 5.0f*perlin.octaveNoise((float)x/21*(100.0 / TERRAIN_DIVISIONS), (float)z / 21 * (100.0 / TERRAIN_DIVISIONS), 32) 
-				- 7.0 * (float)x/TERRAIN_DIVISIONS - 3.0 * z / TERRAIN_DIVISIONS + 5.0f;
-		}
-	}
-}
+SceneGraph graph = SceneGraph();
 
 void initTextures(void)
 {
 	grass_texture = loadTexture("grass.png");
 	water_texture = loadTexture("water.png");
+}
+
+void initTerrain(void)
+{
+	graph.Add(new Cube());
 }
 
 void initialize(void)
@@ -122,169 +62,6 @@ void initialize(void)
 	glEnable(GL_DEPTH_TEST);
 	initTextures();
 	initTerrain();
-}
-
-const float GRID_SPACE = 1.0f / TERRAIN_DIVISIONS * 100;
-
-void terrainPoint(int x, int z)
-{
-	float height = terrain[x + z * TERRAIN_DIVISIONS];
-	//glColor3f(0, height / 5, 0);
-	glColor3f(height, height + 0.5, height + 0.5);
-	glTexCoord2f((float)x / TERRAIN_DIVISIONS * 10, (float)z / TERRAIN_DIVISIONS * 10);
-	glVertex3f((x - (TERRAIN_DIVISIONS / 2)) * GRID_SPACE, height, (z - (TERRAIN_DIVISIONS / 2)) * GRID_SPACE);
-}
-
-void drawBox(float x, float y, float z)
-{
-	glPushMatrix();
-	glLoadIdentity();
-	glTranslatef(x, y, z);
-	for (int i = 0; i < 4; i++) 
-	{
-		glColor3f(0.3*i, 0.7, 0.5);
-		glPushMatrix();
-		glRotatef(i * 90, 0, 1, 0);
-		glTranslatef(0, 0, -0.4);
-		glScalef(1, 0.5, 0.1);
-		glutSolidCube(1.0);
-		glPopMatrix();
-
-		glColor3f(1, 0, 0);
-		glPushMatrix();
-		glRotatef(i * 90, 0, 1, 0);
-		glTranslatef(-0.4, 0, -0.4);
-		glScalef(0.25, 0.6, 0.25);
-		glutSolidCube(1.1);
-		glPopMatrix();
-	}
-	glPopMatrix();
-}
-
-void drawHouse(float x, float y, float z)
-{
-	glPushMatrix();
-	glLoadIdentity();
-	glTranslatef(x, y, z);
-
-	glScalef(10,10,10);
-
-	//todo : doors and windows, maybe do this as polygons. (plan out on paper)
-
-	for (int i = 0; i < 4; i++)
-	{
-		glColor3f(0.3*i, 0.7, 0.5);
-		glPushMatrix();
-		glRotatef(i * 90, 0, 1, 0);
-		glTranslatef(0, 0, -0.4);
-		glScalef(1, 0.5, 0.1);
-		glutSolidCube(1.0);
-		glPopMatrix();
-
-		glColor3f(1, 0, 0);
-		glPushMatrix();
-		glRotatef(i * 90, 0, 1, 0);
-		glTranslatef(-0.4, 0, -0.4);
-		glScalef(0.25, 0.6, 0.25);
-		glutSolidCube(1.1);
-		glPopMatrix();
-	}
-
-	glPopMatrix();
-}
-
-/** swept axis object. */
-void drawTrinket(float x, float y, float z)
-{
-	glPushMatrix();
-	glLoadIdentity();
-	glTranslatef(x, y, z);
-	glPopMatrix();
-}
-
-
-void drawTurtle(float x, float y, float z)
-{
-	glMatrixMode(GL_MODELVIEW);
-
-	// shell
-	glLoadIdentity();
-	glTranslatef(x, y, z);
-	glColor3f(0, 0.5, 0);
-	glScalef(1, 0.3, 1);
-	glutSolidCube(1.0);
-
-	// body
-	glLoadIdentity();
-	glTranslatef(x, y-0.2, z);
-	glColor3f(0.65, 0.55, 0.60);
-	glScalef(0.8, 0.2, 0.9);
-	glutSolidCube(1.0);
-
-	// arms
-	glLoadIdentity();
-	glTranslatef(x - 0.5, y - 0.2, z);
-	glColor3f(0.65, 0.95, 0.60);
-	glScalef(0.6, 0.1, 0.2);
-	glutSolidCube(1.0);
-
-	glLoadIdentity();
-	glTranslatef(x + 0.5, y - 0.2, z);
-	glColor3f(0.65, 0.95, 0.60);
-	glScalef(0.6, 0.1, 0.2);
-	glutSolidCube(1.0);
-
-	// head
-	glLoadIdentity();
-	glTranslatef(x, y - 0.2, z + 0.6);
-	glColor3f(0.65, 0.95, 0.60);
-	glScalef(0.25, 0.25, 0.25);
-	glutSolidCube(1.0);
-
-}
-
-void drawTerrain(void)
-{
-
-	glPushMatrix();
-	glTranslatef(0, -1.5, 0);
-
-	// the water
-	glColor3f(1, 1, 1);
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, water_texture);
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex3f(-50, 0, -50);
-	glTexCoord2f(7, 0);
-	glVertex3f(+50, 0, -50);
-	glTexCoord2f(7, 7);
-	glVertex3f(+50, 0, +50);
-	glTexCoord2f(0, 7);
-	glVertex3f(-50, 0, +50);
-	glDisable(GL_TEXTURE_2D);
-	glEnd();
-	glDisable(GL_TEXTURE_2D);
-
-	glPopMatrix();
-
-	// the ground
-
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, grass_texture);
-
-	glBegin(GL_QUADS);
-	for (int z = 0; z < TERRAIN_DIVISIONS-1; z++) {
-		for (int x = 0; x < TERRAIN_DIVISIONS-1; x++) {
-			terrainPoint(x, z);
-			terrainPoint(x + 1, z);
-			terrainPoint(x + 1, z + 1);
-			terrainPoint(x, z + 1);			
-		}				
-	}
-	glEnd();
-
-	glDisable(GL_TEXTURE_2D);
 }
 
 void display(void)
@@ -298,19 +75,8 @@ void display(void)
 	glLoadIdentity();
 	gluPerspective(70.0f, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 1000);
 
-	// setup camera transformation	
-	camera.apply();
-
-	// draw the scene
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glTranslatef(0, -20, -100);
-	drawTerrain();
-
-	drawHouse(0, 0, 0);
-
-	//drawTurtle(0, 0, -10);
-	drawBox(0,0,-10);
+	// setup camera transformation
+	graph.Render(camera);
 
 	glFlush();
 }
@@ -345,7 +111,7 @@ void keyboard(unsigned char key, int x, int y)
 	case 's':
 		camera.move(-1.0f);
 		break;
-	case 'q':		
+	case 'q':
 		camera.yAngle -= 0.1f;
 		break;
 	case 'e':

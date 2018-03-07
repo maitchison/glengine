@@ -1,2 +1,2 @@
-g++ td=c++11 -c utils.cpp
-g++ -std=c++11 -framework OpenGL -lm -w -o main.exe main.cpp utils.o && main.exe
+echo "---------------------------------------------------------------------------------------------------"
+g++ -std=c++11 -w -o glengine.exe main.cpp utils.cpp scenegraph.cpp -lGL -lGLU -lglut && ./glengine.exe

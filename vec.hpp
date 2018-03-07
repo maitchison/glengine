@@ -1,5 +1,7 @@
+#pragma once
+
 /**
-Include only vector class
+vector classes
 */
 
 /** 3d vector */
