@@ -1,11 +1,12 @@
 /*
 
-todo:
+today:
 
 build house
-
 surface of revolution
+skybox
 
+later (for fun):
 proper day / night cycle
 physics based movement (i.e. jumping, walking up blocks etc)
 textures on terrain
@@ -117,7 +118,19 @@ void initialize(void)
 	glEnable(GL_DEPTH_TEST);
 	initLights();
 	initTextures();
-	initTerrain();
+	//initTerrain();
+
+
+	// stub: build a surface of revolution
+	std::vector<Vec2> points;
+	points.push_back(Vec2(0,0));
+	points.push_back(Vec2(1,1));
+	points.push_back(Vec2(1,2));
+	points.push_back(Vec2(0,3));
+
+	SurfaceOfRevolution* shape = new SurfaceOfRevolution(points);
+	graph.Add(shape);
+
 }
 
 void display(void)

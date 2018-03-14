@@ -119,11 +119,14 @@ class Sphere: public Object
 class SurfaceOfRevolution: public Object
 {
 protected:
-    Vec2 points[];
+    std::vector<Vec2> points;
     int slices = 16;
 
 public:
-     SurfaceOfRevolution(Vec2 points): Object()
+
+    SurfaceOfRevolution();
+     SurfaceOfRevolution(std::vector<Vec2> points);
+
 protected:
      void drawObject(void) override;
 };

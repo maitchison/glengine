@@ -109,18 +109,53 @@ void Light::drawObject(void)
 // surface of resolution
 //------------------------------------------------------
 
-SurfaceOfRevolution::SurfaceOfRevolution(Vec2 points): Object()
+SurfaceOfRevolution::SurfaceOfRevolution(): Object()
 {
-    this->points = points;
+    // pass
 }
 
-SurfaceOfRevolution::drawObject(void)
+SurfaceOfRevolution::SurfaceOfRevolution(std::vector<Vec2> points): SurfaceOfRevolution()
+{
+    for (int i = 0; i < points.size(); i++) {
+        this->points.push_back(points[i]);
+    }
+    
+}
+
+void SurfaceOfRevolution::drawObject(void)
 {
     // rotate around axis
-    for (int i = 0; i < slices; i++) {
-        float x = sin(theta) * points[i];
-        float z = cos(theta) * points[i];
+    float theta;
+    float x;
+    float y;
+    float z;
+    float abs2;
+    float abs;
+
+    int n = points.size();
+
+    glBegin(GL_QUAD_STRIP);
+    for (int j = 0; j < n; j++) {
+
+        for (int i = 0; i < slices; i++) {            
+            theta = (float)i / (slices-1) * (2 * M_PI);
+            x = sin(theta) * points[j].x;
+            z = cos(theta) * points[j].x;
+            y =  points[j].y;
+            abs2 = x*x+y*y+z*z;
+            abs = (abs2 == 0) ? 1 : sqrt(abs2);
+            glNormal3f(x/abs,y/abs,z/abs);
+            glVertex3f(x,y,z);
+            x = sin(theta) * points[(j+1) % n].x;
+            z = cos(theta) * points[(j+1) % n].x;
+            y =  points[(j+1) % n].y;
+            abs2 = x*x+y*y+z*z;
+            abs = (abs2 == 0) ? 1 : sqrt(abs2);
+            glNormal3f(x/abs,y/abs,z/abs);
+            glVertex3f(x,y,z);
+        }
     }
+    glEnd();
 }
 
 //------------------------------------------------------
