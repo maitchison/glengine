@@ -66,7 +66,11 @@ protected:
     /** Handles custom part of object draw. */
     virtual void drawObject(void);
 
+    /** Children of this scenegraph object. */
+    std::vector<Object*> children;
+
 public:
+    
     /** Location of the object. */
     Vec3 position;
 
@@ -88,6 +92,7 @@ public:
 public:
     Object();
     Object(Vec3 position);
+    void Add(Object* object);
 
 };
 
@@ -109,11 +114,12 @@ class Cube: public Object
     void drawObject(void) override;
 public:
     Cube() : Object() {};
+    Cube(float width, float height, float depth) : Cube() { this->scale = Vec3(width, height, depth); };
 };
 
 class Sphere: public Object
 {
-    void drawObject(void) override;
+    void drawObject(void) override;    
 };
 
 class SurfaceOfRevolution: public Object
@@ -125,8 +131,21 @@ protected:
 public:
 
     SurfaceOfRevolution();
-     SurfaceOfRevolution(std::vector<Vec2> points);
+    SurfaceOfRevolution(std::vector<Vec2> points);
 
 protected:
      void drawObject(void) override;
 };
+
+class Cylinder: public SurfaceOfRevolution
+{
+public:
+    Cylinder(float radius, float height, bool capped=true) : SurfaceOfRevolution()
+    {
+        if (capped) points.push_back(Vec2(0, -(float)height/2));
+        points.push_back(Vec2(radius, -(float)height/2));
+        points.push_back(Vec2(radius, +(float)height/2));        
+        if (capped) points.push_back(Vec2(0, +(float)height/2));
+    }
+};
+

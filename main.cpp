@@ -3,7 +3,7 @@
 today:
 
 build house
-surface of revolution
+[done] surface of revolution
 skybox
 
 later (for fun):
@@ -42,6 +42,110 @@ const int SCREEN_HEIGHT = 600;
 Camera camera = Camera();
 SceneGraph graph = SceneGraph();
 Light* sunLight;
+
+//---------------------------------------------------------------
+
+// house object
+
+class House: public Object
+{
+private:
+	// create a new block
+	void block(Vec3 bottomLeft, Vec3 topRight, Material* material = NULL)
+	{
+		Object* block = new Cube(size.x, size.y, size.z);
+		block->position = Vec3(pos.x, pos.y, pos.z);
+		block->material = material;
+		Add(block);
+	}
+
+
+	// create a new block with a window area cut out.
+	void cutBlock(Vec3 bottomLeft, Vec3 p1, Vec3 p2, Vec3 topRight, Material* material = NULL)
+	{
+		block(bottomLeft,Vec3(p1.x, topRight.y, topRight.z));
+		block(Vec3(p2.x, bottomLeft.y, bottomLeft.z), topRight);
+		block(bottomLeft,p1);
+	}
+
+
+public:
+	House()
+	{
+
+		// the tower
+		std::vector<Vec2> towerPoints = {
+			Vec2(0,21), 			
+			Vec2(2,21), 			
+			Vec2(2,20), 			
+			Vec2(2,19), 
+			Vec2(2,18), 
+			Vec2(2,17), 
+			Vec2(2,16), 
+			Vec2(2,15), 
+			Vec2(2,14), 
+			Vec2(2,13), 
+			Vec2(2,12), 
+			Vec2(2,11), 
+			Vec2(2,10), 
+			Vec2(2,9), 
+			Vec2(2,8), 
+			Vec2(2,7), 
+			Vec2(2,6),
+			Vec2(2,5), 
+			Vec2(2,4),
+			Vec2(2,3),
+			Vec2(2,2),
+			Vec2(2,1), 
+			Vec2(2,0)
+		};
+		Object* tower = new SurfaceOfRevolution(towerPoints);
+		Add(tower);
+
+		// the light
+		Object* light = new Cylinder(1.5, 3);		
+		light->position.y = 21;
+		light->material = new Material();
+		light->material->emission = Color(1,0.9,0.7);
+		Add(light);
+
+		// the cap
+		Object* cap = new Cylinder(2, 1.5);		
+		cap->position.y = 23;
+		Add(cap);
+
+		// tower rings
+		Material* ringMaterial = new Material();
+		ringMaterial->diffuse = Color(0.5,0.5,0.5);
+		ringMaterial->specular = Color(0,0,0);
+		
+		for (int i = 0; i < 4; i ++) 
+		{
+			Object* ring = new Cylinder(2.1,0.4);
+			ring->position.y = i * 7;
+			ring->material = ringMaterial;
+			Add(ring);
+		}
+
+		// building walls
+
+		Material* wallMaterial = new Material();
+		wallMaterial->diffuse = Color(1,0,0);
+
+		// back wall
+		block(Vec3(-5, 1.5, -1.5), Vec3(8,3,0.15), wallMaterial);
+
+		// front wall
+		block(Vec3(-5, 1.5, +1.5), Vec3(8,3,0.15), wallMaterial);
+
+		// entrance
+		block(Vec3(-9, 1.5, 0), Vec3(0.15,3,3), wallMaterial);
+		
+	}    
+};
+
+
+//---------------------------------------------------------------
 
 void initTextures(void)
 {
@@ -111,6 +215,12 @@ void initTerrain(void)
 
 }
 
+void initHouse(void)
+{
+	House* house = new House();
+	graph.Add(house);
+}
+
 void initialize(void)
 {
 	glClearColor(0.1f, 0.0f, 0.5f, 1.0f);
@@ -120,6 +230,7 @@ void initialize(void)
 	initTextures();
 	//initTerrain();
 
+	initHouse();
 
 	// stub: build a surface of revolution
 	std::vector<Vec2> points;

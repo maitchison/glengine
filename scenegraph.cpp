@@ -3,6 +3,8 @@
 #include "utils.h"
 #include "scenegraph.h"
 
+Material DEFAULT_MATERIAL = Material();
+
 //------------------------------------------------------
 // scenegraph
 //------------------------------------------------------
@@ -64,10 +66,18 @@ Object::Object(Vec3 position) : Object()
     this->position = position;
 }
 
+void Object::Add(Object* object)
+{
+    children.push_back(object);
+}
+
 void Object::Draw(void)
 {
     // apply our Material
-    if (material) material->Apply();
+    if (material) { 
+        material->Apply(); 
+    } else DEFAULT_MATERIAL.Apply();
+        
     // setup out transforms
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -77,7 +87,16 @@ void Object::Draw(void)
     glRotatef(rotation.z, 0, 0, 1);
     glScalef(scale.x, scale.y, scale.z);
     glColor4f(color.r, color.g, color.b, color.a);
+
+    // draw us
     drawObject();
+
+    // draw children
+    for (int i = 0; i < children.size(); i++) {
+        children[i]->Draw();
+    }
+
+    // clean up
     glPopMatrix();
 }
 
