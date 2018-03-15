@@ -53,9 +53,11 @@ public:
     Color specular;
     Color emission;
     float shininess;
+    GLuint textureId;
 public:
     Material();
     Material(Color color) : Material() { ambient = diffuse = color; };
+    Material(GLuint textureId) : Material() { this->textureId = textureId; };
     void Apply(void);
 };
 
@@ -118,6 +120,14 @@ class Cube: public Object
 public:
     Cube() : Object() {};
     Cube(float width, float height, float depth) : Cube() { this->scale = Vec3(width, height, depth); };
+};
+
+class Quad: public Object
+{
+    void drawObject(void) override;    
+public:
+    Quad() : Object() {};
+    Quad(Vec3 position, float width, float height) : Object() { this->position = position; this->scale = Vec3(width, height, 1); };
 };
 
 class Sphere: public Object

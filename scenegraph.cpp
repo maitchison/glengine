@@ -34,6 +34,7 @@ Material::Material()
     specular = Color(1,1,1);
     emission = Color(0,0,0);
     shininess = 40;
+    textureId = 0;
 };
 
 void Material::Apply(void)
@@ -43,9 +44,18 @@ void Material::Apply(void)
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular.values);
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission.values);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
+
     if (diffuse.a != 1.0) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    if (textureId) 
+    {
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, textureId);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
 
@@ -129,6 +139,20 @@ void Light::drawObject(void)
 
     //stub: draw light in world
     glutSolidSphere(1.0, 4, 4);
+}
+
+void Quad::drawObject(void)
+{
+    glBegin(GL_QUADS);
+    glTexCoord2f(0,0);
+    glVertex3f(-0.5,-0.5,0);
+    glTexCoord2f(1,0);
+    glVertex3f(+0.5,-0.5,0);
+    glTexCoord2f(1,1);
+    glVertex3f(+0.5,+0.5,0);
+    glTexCoord2f(0,1);
+    glVertex3f(-0.5,+0.5,0);
+    glEnd();        
 }
 
 //------------------------------------------------------

@@ -20,7 +20,14 @@ skybox
 
 */
 
+/*
+Sources
+
+Skybox is from https://reije081.home.xs4all.nl/skyboxes/ [edited]
+*/
+
 #include "stdinc.h"
+#include "loadTGA.h"
 
 #include "PerlinNoise.hpp"
 #include "utils.h"
@@ -42,6 +49,8 @@ const int SCREEN_HEIGHT = 600;
 Camera camera = Camera();
 SceneGraph graph = SceneGraph();
 Light* sunLight;
+
+GLuint texId[6];
 
 //---------------------------------------------------------------
 
@@ -170,6 +179,50 @@ public:
 	}    
 };
 
+// Renders skybox on a very far away cube.
+class Skybox : public Object
+{
+public:
+    Skybox(GLuint textures[6])
+    {
+        Quad* quad;
+
+        float size = 1000;
+        
+        //front
+        quad = new Quad(Vec3(0,0,size),size*2,size*2);
+        quad->rotation.y = 180;
+        quad->material = new Material(textures[1]);         
+        Add(quad);
+        //left
+        quad = new Quad(Vec3(+size,0,0),size*2,size*2);
+        quad->rotation.y = -90;
+        quad->material = new Material(textures[0]);        
+        Add(quad);
+        //right
+        quad = new Quad(Vec3(-size,0,0),size*2,size*2);
+        quad->rotation.y = +90;
+        quad->material = new Material(textures[2]);
+        Add(quad);
+        //back
+        quad = new Quad(Vec3(0,0,-size),size*2,size*2);
+        quad->rotation.y = 0;
+        quad->material = new Material(textures[3]);
+        Add(quad);
+        //top
+        quad = new Quad(Vec3(0,size,0),-size*2,size*2);
+        quad->rotation.x = -90;
+        quad->rotation.z = 0;
+        quad->material = new Material(textures[4]);
+        Add(quad);
+        //bottom
+        quad = new Quad(Vec3(0,-size,0),-size*2,size*2);
+        quad->rotation.x = -90;
+        quad->rotation.z = 0;
+        quad->material = new Material(textures[5]);
+        Add(quad);
+    }
+};
 
 //---------------------------------------------------------------
 
@@ -179,14 +232,40 @@ void initTextures(void)
 	water_texture = loadTexture("water.png");
 }
 
+void loadSkyBoxTexture(char* filename, GLuint texId)
+{
+    printf("loading %s\n", filename);
+    glBindTexture(GL_TEXTURE_2D, texId);
+	loadTGA(filename);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);	
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);	
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+}
+
+void initSkyBox()
+{
+	glGenTextures(6, texId); 		
+	loadSkyBoxTexture("sky_left.tga", texId[0]);
+	loadSkyBoxTexture("sky_front.tga", texId[1]);
+	loadSkyBoxTexture("sky_right.tga", texId[2]);
+	loadSkyBoxTexture("sky_back.tga", texId[3]);
+	loadSkyBoxTexture("sky_top.tga", texId[4]);
+	loadSkyBoxTexture("sky_down.tga", texId[5]);
+
+    graph.Add(new Skybox(texId));
+
+}
+
 void initLights(void)
 {
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-	//glEnable(GL_COLOR_MATERIAL);
-
+	
 	sunLight = new Light(GL_LIGHT0);
-	sunLight->position = Vec3(10, 20, 0);
+	sunLight->position = Vec3(-500, +70, -500);
 	graph.Add(sunLight);
 }
 
@@ -252,8 +331,7 @@ void initCamera()
     camera.x = 7.37;
     camera.y = 1.0;
     camera.z = 1.5;
-    camera.yAngle = -20;
-    
+    camera.yAngle = -20;    
 }
 
 void initialize(void)
@@ -265,6 +343,7 @@ void initialize(void)
 	initTextures();
     initCamera();
 	//initTerrain();
+    initSkyBox();
 
 	initHouse();
 
@@ -279,7 +358,7 @@ void display(void)
 	// setup perspective
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(70.0f, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 1000);
+	gluPerspective(70.0f, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 2000);
 
 	graph.Render(camera);
 
@@ -300,10 +379,7 @@ void update(void)
 	if (counter % 100 == 0) {
 		printf("fps %f pos (%f,%f,%f)\n", 1.0 / elapsed, camera.x, camera.y, camera.z);
 	}
-
-	// stub: update light position
-	sunLight->position = Vec3(sin(currentTime)*30, cos(currentTime)*30,0);
-
+	
 	glutPostRedisplay();
 	lastFrameTime = currentTime;
 
