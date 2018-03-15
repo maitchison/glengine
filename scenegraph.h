@@ -71,6 +71,9 @@ protected:
 
 public:
     
+    /** Anchor point (in object space). */
+    Vec3 anchor;
+
     /** Location of the object. */
     Vec3 position;
 
@@ -140,12 +143,24 @@ protected:
 class Cylinder: public SurfaceOfRevolution
 {
 public:
-    Cylinder(float radius, float height, bool capped=true) : SurfaceOfRevolution()
+    Cylinder(float radius, float height, bool capped=true, int divisions = -1) : SurfaceOfRevolution()
     {
-        if (capped) points.push_back(Vec2(0, -(float)height/2));
-        points.push_back(Vec2(radius, -(float)height/2));
-        points.push_back(Vec2(radius, +(float)height/2));        
-        if (capped) points.push_back(Vec2(0, +(float)height/2));
+        if (capped) points.push_back(Vec2(0, 0));
+        if (divisions == -1) {
+            divisions = (int)abs(height) + 2;
+        }
+        
+        for (int i = 0; i < divisions; i++) 
+        {
+            float y = (i * height / (divisions-1));
+            points.push_back(Vec2(radius, y));
+        }
+
+        if (capped) points.push_back(Vec2(0, height/2));
+    }
+    Cylinder(Vec3 pos, float radius, float height, bool capped=true, int divisions = -1) : Cylinder(radius, height, capped, divisions)
+    {
+        this->position = pos;
     }
 };
 

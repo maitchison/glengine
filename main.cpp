@@ -53,54 +53,50 @@ private:
 	// create a new block
 	void block(Vec3 bottomLeft, Vec3 topRight, Material* material = NULL)
 	{
-		Object* block = new Cube(size.x, size.y, size.z);
-		block->position = Vec3(pos.x, pos.y, pos.z);
+        Vec3 mid = Vec3((bottomLeft.x + topRight.x) / 2, (bottomLeft.y + topRight.y) / 2, (bottomLeft.z + topRight.z) / 2);
+        Vec3 size = Vec3(-(bottomLeft.x - topRight.x), -(bottomLeft.y - topRight.y), -(bottomLeft.z - topRight.z));
+		Object* block = new Cube();
+        block->scale = size;
+		block->position = mid;
 		block->material = material;
 		Add(block);
 	}
 
+    void marker(Vec3 pos, Color color = Color(1,0,0))
+    {
+        float size = 1;
+        Object* block = new Cube();
+        block->scale = Vec3(size,size,size);
+		block->position = pos;
+		block->material = new Material();
+        block->material->emission = color;
+		Add(block);
+    }
 
-	// create a new block with a window area cut out.
-	void cutBlock(Vec3 bottomLeft, Vec3 p1, Vec3 p2, Vec3 topRight, Material* material = NULL)
-	{
-		block(bottomLeft,Vec3(p1.x, topRight.y, topRight.z));
-		block(Vec3(p2.x, bottomLeft.y, bottomLeft.z), topRight);
-		block(bottomLeft,p1);
-	}
+    void wall(Vec2 p1, Vec2 p2, float thickness, float startHeight, float endHeight, Material* material = NULL)
+    {
+        float dx = p2.x - p1.x;
+        float dy = p2.y - p1.y;
+        float wallLength = sqrtf(dx*dx + dy*dy);
+        float wallAngle = atan2(dy, dx) / M_PI * 180.0 + 90;
 
+        Object* wall = new Cube();
+        wall->anchor = Vec3(0, -0.5, +0.5);
+        wall->position = Vec3(p1.x, startHeight, p1.y);
+        wall->scale = Vec3(thickness, endHeight - startHeight, wallLength);
+        wall->rotation = Vec3(0, -wallAngle, 0);
+        wall->material = material;
+        Add(wall);
+
+    }
 
 public:
 	House()
 	{
 
-		// the tower
-		std::vector<Vec2> towerPoints = {
-			Vec2(0,21), 			
-			Vec2(2,21), 			
-			Vec2(2,20), 			
-			Vec2(2,19), 
-			Vec2(2,18), 
-			Vec2(2,17), 
-			Vec2(2,16), 
-			Vec2(2,15), 
-			Vec2(2,14), 
-			Vec2(2,13), 
-			Vec2(2,12), 
-			Vec2(2,11), 
-			Vec2(2,10), 
-			Vec2(2,9), 
-			Vec2(2,8), 
-			Vec2(2,7), 
-			Vec2(2,6),
-			Vec2(2,5), 
-			Vec2(2,4),
-			Vec2(2,3),
-			Vec2(2,2),
-			Vec2(2,1), 
-			Vec2(2,0)
-		};
-		Object* tower = new SurfaceOfRevolution(towerPoints);
-		Add(tower);
+        
+		Object* tower = new Cylinder(2, 21);
+        Add(tower);
 
 		// the light
 		Object* light = new Cylinder(1.5, 3);		
@@ -126,20 +122,50 @@ public:
 			ring->material = ringMaterial;
 			Add(ring);
 		}
-
+        
 		// building walls
 
 		Material* wallMaterial = new Material();
 		wallMaterial->diffuse = Color(1,0,0);
 
-		// back wall
-		block(Vec3(-5, 1.5, -1.5), Vec3(8,3,0.15), wallMaterial);
+        float wallThickness = 0.15;
+        float houseLength = 8.0;
+        float houseWidth = 3.0;
+        float houseHeight = 3.0;
 
-		// front wall
-		block(Vec3(-5, 1.5, +1.5), Vec3(8,3,0.15), wallMaterial);
+        // -----------------------------------
+		// main room
+        
+        // back wall
+        wall(Vec2(0,-3), Vec2(houseLength,-3), wallThickness, 0, 3);
 
-		// entrance
-		block(Vec3(-9, 1.5, 0), Vec3(0.15,3,3), wallMaterial);
+        // front wall
+        wall(Vec2(0,3), Vec2(8,3), wallThickness, 0, 0.5);
+        wall(Vec2(0,3), Vec2(8,3), wallThickness, 2.5, 3);
+        wall(Vec2(0,3), Vec2(1,3), wallThickness, 0.5, 2.5);
+        wall(Vec2(7,3), Vec2(8,3), wallThickness, 0.5, 2.5);
+
+        // entrance wall
+        wall(Vec2(8,-3), Vec2(8,-2), wallThickness, 0, 3);
+        wall(Vec2(8,-2), Vec2(8,2), wallThickness, 2.2, 3);
+        wall(Vec2(8,2), Vec2(8,3), wallThickness, 0, 3);
+        
+        // far wall
+        wall(Vec2(0,-3), Vec2(0,3), wallThickness, 0, 3);
+
+        // floor
+        block(Vec3(0, 0,-3), Vec3(8,wallThickness, 3));    
+
+        // roof
+        block(Vec3(0, 3,-3), Vec3(8,3-wallThickness, 3));    
+
+        // pillars (cover the joins)
+        Add(new Cylinder(Vec3(0,0,-3), wallThickness, 3));
+        Add(new Cylinder(Vec3(0,0,+3), wallThickness, 3));
+        Add(new Cylinder(Vec3(8,0,-3), wallThickness, 3));
+        Add(new Cylinder(Vec3(8,0,+3), wallThickness, 3));
+
+
 		
 	}    
 };
@@ -221,6 +247,15 @@ void initHouse(void)
 	graph.Add(house);
 }
 
+void initCamera()
+{
+    camera.x = 7.37;
+    camera.y = 1.0;
+    camera.z = 1.5;
+    camera.yAngle = -20;
+    
+}
+
 void initialize(void)
 {
 	glClearColor(0.1f, 0.0f, 0.5f, 1.0f);
@@ -228,19 +263,10 @@ void initialize(void)
 	glEnable(GL_DEPTH_TEST);
 	initLights();
 	initTextures();
+    initCamera();
 	//initTerrain();
 
 	initHouse();
-
-	// stub: build a surface of revolution
-	std::vector<Vec2> points;
-	points.push_back(Vec2(0,0));
-	points.push_back(Vec2(1,1));
-	points.push_back(Vec2(1,2));
-	points.push_back(Vec2(0,3));
-
-	SurfaceOfRevolution* shape = new SurfaceOfRevolution(points);
-	graph.Add(shape);
 
 }
 
@@ -272,7 +298,7 @@ void update(void)
 	counter++;
 
 	if (counter % 100 == 0) {
-		printf("fps %f\n", 1.0 / elapsed);
+		printf("fps %f pos (%f,%f,%f)\n", 1.0 / elapsed, camera.x, camera.y, camera.z);
 	}
 
 	// stub: update light position

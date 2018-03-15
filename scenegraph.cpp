@@ -55,6 +55,7 @@ void Material::Apply(void)
 
 Object::Object()
 {
+    anchor = Vec3(0,0,0);
     position = Vec3(0,0,0);
     rotation = Vec3(0,0,0);
     scale = Vec3(1,1,1);
@@ -81,11 +82,18 @@ void Object::Draw(void)
     // setup out transforms
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
+
     glTranslatef(position.x, position.y, position.z);
+
+    //glTranslatef(anchor.x, anchor.y, anchor.z);
+
     glRotatef(rotation.x, 1, 0, 0);
     glRotatef(rotation.y, 0, 1, 0);
     glRotatef(rotation.z, 0, 0, 1);
     glScalef(scale.x, scale.y, scale.z);
+        
+    glTranslatef(-anchor.x, -anchor.y, -anchor.z);
+    
     glColor4f(color.r, color.g, color.b, color.a);
 
     // draw us
@@ -106,7 +114,6 @@ void Object::drawObject(void)
 
 void Cube::drawObject(void)
 {
-
     glutSolidCube(1.0);
 }
 
