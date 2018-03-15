@@ -1,21 +1,37 @@
 /*
 
+Animated objects
+
+1. Turtle
+2. Bird (moves around path)
+3. World and moons
+4. Vase (surface of revolution, maybe it spins?)
+5. Opening Chest
+
+
+
+
 today:
 
-build house
+[done] build house
 [done] surface of revolution
-skybox
+[done] skybox
+put 5 objects in house
+
+
+collision detection
+simple shadows
 
 later (for fun):
 proper day / night cycle
 physics based movement (i.e. jumping, walking up blocks etc)
-textures on terrain
-5 objects inside house
+
+
 
 roaming animals (turtles and birds)
 graphic for sun (just a yellow sphere)
 alternative camera view (from turtles perspective)
-skybox
+
 
 
 */
@@ -55,6 +71,121 @@ GLuint texId[6];
 //---------------------------------------------------------------
 
 // house object
+
+class Turtle: public Object
+{
+public:
+    Turtle() : Object()
+    {
+        // shell
+        Object* shell = new Cube();
+        shell->material = new Material(Color(0, 0.5, 0));
+	    shell->scale = Vec3(1, 0.3, 1);	    
+        Add(shell);
+
+	    // body
+        Object* body = new Cube();
+	    body->position = Vec3(0, -0.2, 0);
+	    body->material = new Material(Color(0.65, 0.55, 0.60));
+	    body->scale = Vec3(0.8, 0.2, 0.9);
+        Add(body);
+	            
+        // arms
+        Object* leftArm = new Cube();
+        leftArm->position = Vec3(- 0.5, - 0.2, 0);
+        leftArm->material = new Material(Color(0.65, 0.95, 0.60));
+	    leftArm->scale = Vec3(0.6, 0.1, 0.2);
+        Add(leftArm);
+
+        Object* rightArm = new Cube();
+        rightArm->position = Vec3(+0.5, - 0.2, 0);
+        rightArm->material = new Material(Color(0.65, 0.95, 0.60));
+	    rightArm->scale = Vec3(0.6, 0.1, 0.2);
+        Add(rightArm);
+
+        // head
+        Object* head = new Cube();            
+        head->position = Vec3(0, - 0.2, 0.6);
+        head->material = new Material(Color(0.65, 0.95, 0.60));
+        head->scale = Vec3(0.25, 0.25, 0.25);        
+        Add(head);
+
+    }
+};
+
+class Bird: public Object
+{
+public:
+    Bird() : Object()
+    {
+        // body
+        Object* body = new Cube();
+        body->material = new Material(Color(0.9, 0.5, 0.45));
+	    body->scale = Vec3(1, 2, 0.8);	    
+        Add(body);
+	    
+        // head
+        Object* head = new Cube();            
+        head->position = Vec3(0, +1.0, 0.6);
+        head->material = new Material(Color(0.9, 0.65, 0.60));
+        head->scale = Vec3(0.65, 0.45, 0.95);        
+        head->rotation.x = 15;
+        Add(head);
+
+        // wings
+        Object* leftWing = new Cube();            
+        leftWing->position = Vec3(0.5, 0.35, 0.2);
+        leftWing->material = new Material(Color(0.2, 0.6, 0.2));
+        leftWing->scale = Vec3(0.15, 1.5, 0.75);                
+        leftWing->anchor = Vec3(0,-0.5, -0.5);
+        leftWing->rotation.x = -155;
+        Add(leftWing);
+
+        Object* rightWing = new Cube();            
+        rightWing->position = Vec3(-0.5, 0.35, 0.2);
+        rightWing->material = new Material(Color(0.2, 0.6, 0.2));
+        rightWing->scale = Vec3(0.15, 1.5, 0.75);                
+        rightWing->anchor = Vec3(0,-0.5, -0.5);
+        rightWing->rotation.x = -155;
+        Add(rightWing);
+
+        scale = Vec3(0.3,0.3,0.3);
+
+    }
+
+};
+
+class FancyBox: public Object
+{
+public:
+    FancyBox() : Object()
+    {
+        // box
+        Object* box = new Cube();
+        box->material = new Material(Color(0.5, 0.5, 0.5));	    
+        Add(box);
+	    
+        // spheres
+        Object* sphere1 = new Sphere();
+        sphere1->position = Vec3(-2, 0, 0);
+        sphere1->scale = Vec3(0.2,0.2,0.2);
+        Add(sphere1);
+
+        Object* sphere2 = new Sphere();
+        sphere2->position = Vec3(+2, 0, 0);
+        sphere2->scale = Vec3(0.2,0.2,0.2);
+        Add(sphere2);
+
+        Object* sphere3 = new Sphere();
+        sphere3->position = Vec3(0, -2, 0);
+        sphere3->scale = Vec3(0.2,0.2,0.2);
+        Add(sphere3);        
+
+    }
+
+};
+
+
 
 class House: public Object
 {
@@ -259,6 +390,25 @@ void initSkyBox()
 
 }
 
+void initAnimatedModels()
+{
+    /*
+    Turtle* turtle = new Turtle();
+    turtle->position = Vec3(0,0,0);
+    graph.Add(turtle);
+    */
+
+    /*
+    Bird* bird = new Bird();
+    bird->position = Vec3(0,0,0);
+    graph.Add(bird);
+    */
+    
+    FancyBox* box = new FancyBox();
+    graph.Add(box);
+
+}
+
 void initLights(void)
 {
 	glEnable(GL_LIGHTING);
@@ -342,10 +492,11 @@ void initialize(void)
 	initLights();
 	initTextures();
     initCamera();
-	//initTerrain();
+    //initTerrain();
     initSkyBox();
-
-	initHouse();
+    initAnimatedModels();
+	
+	//initHouse();
 
 }
 
@@ -387,31 +538,33 @@ void update(void)
 
 void keyboard(unsigned char key, int x, int y)
 {
+    float moveSpeed = 0.2f;
+    float turnSpeed = 0.09f;
 	switch (key)
 	{
 	case 'w':
-		camera.move(1.0f);
+		camera.move(moveSpeed);
 		break;
 	case 's':
-		camera.move(-1.0f);
+		camera.move(-moveSpeed);
 		break;
 	case 'q':
-		camera.yAngle -= 0.1f;
+		camera.yAngle -= turnSpeed;
 		break;
 	case 'e':
-		camera.yAngle += 0.1f;
+		camera.yAngle += turnSpeed;
 		break;
 	case 'a':
-		camera.pan(-1.0f);
+		camera.pan(-moveSpeed);
 		break;
 	case 'd':
-		camera.pan(1.0f);
+		camera.pan(moveSpeed);
 		break;
 	case ' ':
-		camera.y += 1.0f;
+		camera.y += moveSpeed;
 		break;
 	case 'c':
-		camera.y -= 1.0f;
+		camera.y -= moveSpeed;
 		break;
 	}
 }
