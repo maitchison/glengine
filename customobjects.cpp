@@ -287,9 +287,9 @@ House::House()
     wall(Vec2(7,3), Vec2(8,3), wallThickness, 0.5, 2.5, wallMaterial);
 
     // entrance wall
-    wall(Vec2(8,-3), Vec2(8,-2), wallThickness, 0, 3, wallMaterial);
-    wall(Vec2(8,-2), Vec2(8,2), wallThickness, 2.2, 3, wallMaterial);
-    wall(Vec2(8,2), Vec2(8,3), wallThickness, 0, 3, wallMaterial);
+    wall(Vec2(8,-3), Vec2(8,-1.5), wallThickness, 0, 3, wallMaterial);
+    wall(Vec2(8,-1.5), Vec2(8,1.5), wallThickness, 2.2, 3, wallMaterial);
+    wall(Vec2(8,1.5), Vec2(8,3), wallThickness, 0, 3, wallMaterial);
     
     // far wall
     wall(Vec2(0,-3), Vec2(0,3), wallThickness, 0, 3, wallMaterial);

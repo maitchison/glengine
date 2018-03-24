@@ -43,7 +43,8 @@ public:
 	float z;
 
 	// camera yAngle in radians.
-	float yAngle;
+	float yAngle = 0;
+    float xAngle = 0;
 
 	void apply(void);
 

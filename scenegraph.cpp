@@ -6,6 +6,32 @@
 Material DEFAULT_MATERIAL = Material();
 
 //------------------------------------------------------
+// helper functions
+//------------------------------------------------------
+
+void drawSubdividedQuad(int divisionsX, int divisionsY) 
+{
+    for (int y = 0; y < (divisionsY-1); y++)
+    {
+        float s;
+        float t;        
+        
+        glBegin(GL_QUAD_STRIP);
+        for (int x = 0; x < divisionsX; x++) {
+            s = (float)x / (divisionsX-1);
+            t = (float)y / (divisionsY-1);    
+            glTexCoord2f(s,t);
+            glNormal3f(0,1,0);
+            glVertex3f(s-0.5, 0, t-0.5);
+            t = ((float)y+1) / (divisionsY-1);    
+            glTexCoord2f(s,t);
+            glNormal3f(0,1,0);
+            glVertex3f(s-0.5, 0, t-0.5);
+        }
+        glEnd();
+    }
+}
+//------------------------------------------------------
 // scenegraph
 //------------------------------------------------------
 
@@ -181,7 +207,28 @@ void Object::updateObject(float elapsed)
 
 void Cube::drawObject(void)
 {
-    glutSolidCube(1.0);
+    // custom subdivided cube with texture co-rds
+    for (int i = 0; i < 4; i ++) {
+        glPushMatrix();
+        glRotatef(90*i,1,0,0);
+        glTranslatef(0,0.5,0);
+        drawSubdividedQuad(2,2);
+        glPopMatrix();        
+    }
+
+    // front and back faces
+
+    glPushMatrix();
+    glRotatef(90,0,0,1);
+    glTranslatef(0,0.5,0);
+    drawSubdividedQuad(2,2);
+    glPopMatrix();
+    glPushMatrix();
+    glRotatef(-90,0,0,1);
+    glTranslatef(0,0.5,0);
+    drawSubdividedQuad(2,2);
+    glPopMatrix();
+    
 }
 
 Sphere::Sphere() : Object()
@@ -230,28 +277,10 @@ void Quad::drawObject(void)
     glEnd();        
 }
 
+
 void Plane::drawObject(void)
 {
-    
-    for (int y = 0; y < (divisionsY-1); y++)
-    {
-        float s;
-        float t;        
-        
-        glBegin(GL_QUAD_STRIP);
-        for (int x = 0; x < divisionsX; x++) {
-            s = (float)x / (divisionsX-1);
-            t = (float)y / (divisionsY-1);    
-            glTexCoord2f(s,t);
-            glNormal3f(0,1,0);
-            glVertex3f(s-0.5, 0, t-0.5);
-            t = ((float)y+1) / (divisionsY-1);    
-            glTexCoord2f(s,t);
-            glNormal3f(0,1,0);
-            glVertex3f(s-0.5, 0, t-0.5);
-        }
-        glEnd();
-    }
+    drawSubdividedQuad(divisionsX, divisionsY);    
 }
 
 //------------------------------------------------------
@@ -337,7 +366,7 @@ void Camera::apply(void)
 {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-	gluLookAt(x, y, z, x + sin(yAngle), y, z + -cos(yAngle), 0, 1, 0);
+	gluLookAt(x, y, z, x + sin(yAngle), y + sin(xAngle), z + -cos(yAngle), 0, 1, 0);
 }
 
 void Camera::move(float amount)

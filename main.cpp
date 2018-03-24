@@ -67,6 +67,7 @@ bool key[256];
 
 GLuint grass_texture;
 GLuint water_texture;
+GLuint sand_texture;
 GLuint globe_texture;
 GLuint moon_texture;
 siv::PerlinNoise noise = siv::PerlinNoise(123);
@@ -83,6 +84,11 @@ Object* bird;
 
 float vVel = 0.0;
 
+const int CM_PLAYER = 0;
+const int CM_SECURITY = 1;
+
+int cameraMode = CM_SECURITY;
+
 GLuint texId[6];
 
 void initTextures(void)
@@ -91,6 +97,7 @@ void initTextures(void)
 	water_texture = loadTexture("water.png");
     globe_texture = loadTexture("earth.png");
 	moon_texture = loadTexture("moon.png");    
+    sand_texture = loadTexture("sand.png");    
 
 }
 
@@ -206,9 +213,9 @@ void initTerrain(void)
 	// then put grass on top, and dirt under
 	// sand is used for water level.
 
-	Material* grass = new Material(Color(0x009933));
+	Material* grass = new Material(grass_texture);
 	Material* dirt = new Material(Color(0x996633));
-	Material* sand = new Material(Color(0xcccc00));
+	Material* sand = new Material(sand_texture);
 	Material* water = new Material(Color(0x2964c4));
 
     water->diffuse.a = 0.95f;	
@@ -262,8 +269,8 @@ void initTerrain(void)
     ocean->divisionsY = 64;
 	graph.Add(ocean);
 
-    // add safety walls
-    Object* floor = new Cube(200,1,200);
+    // add safety floor (so we don't fall through)
+    Object* floor = new Cube(200,2,200);
     floor->position = Vec3(0,-5,0);
     floor->visible = false;
     floor->solid = true;
@@ -291,6 +298,7 @@ void initialize(void)
 	glClearColor(0.1f, 0.0f, 0.5f, 1.0f);
 	glEnable(GL_DEPTH);
 	glEnable(GL_DEPTH_TEST);
+    glEnable(GL_NORMALIZE);
  	initLights();
 	initTextures();
     initPlayer();
@@ -348,13 +356,24 @@ void update(void)
 	}    
 
     // update the camera, make sure same is behind player a little.
-    updateInput();
-    player.update(elapsed);
-    camera.x = player.position.x + sin(-player.yAngle) * 0.2;
-    camera.y = player.position.y+1.5;
-    camera.z = player.position.z + cos(-player.yAngle) * 0.2;
-    camera.yAngle = player.yAngle;
-
+    switch (cameraMode) {
+        case CM_PLAYER:
+            updateInput();
+            player.update(elapsed);
+            camera.x = player.position.x + sin(-player.yAngle) * 0.2;
+            camera.y = player.position.y+1.2;
+            camera.z = player.position.z + cos(-player.yAngle) * 0.2;
+            camera.yAngle = player.yAngle;
+            break;
+        case CM_SECURITY:
+            camera.x = 7.4;
+            camera.y = 2;
+            camera.z = -2.5;
+            camera.yAngle = sin(currentTime / 2) * 0.6 + 4;
+            camera.xAngle = -0.1;
+            break;
+    }
+    
     graph.Update(elapsed);
 
     // update the birds location
