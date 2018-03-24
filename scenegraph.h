@@ -57,6 +57,7 @@ public:
     Color emission;
     float shininess;
     GLuint textureId;
+    bool disableLighting;
 public:
     Material();
     Material(Color color) : Material() { ambient = diffuse = color; };
@@ -154,8 +155,11 @@ class SurfaceOfRevolution: public Object
 protected:
     std::vector<Vec2> points;
     int slices = 16;
-
+        
 public:
+
+    // number of degrees to sweep across.
+    float sweepAngle = 360;
 
     SurfaceOfRevolution();
     SurfaceOfRevolution(std::vector<Vec2> points);
@@ -167,6 +171,7 @@ protected:
 class Cylinder: public SurfaceOfRevolution
 {
 public:
+    
     Cylinder(float radius, float height, bool capped=true, int divisions = -1) : SurfaceOfRevolution()
     {
         if (capped) points.push_back(Vec2(0, 0));
@@ -180,7 +185,7 @@ public:
             points.push_back(Vec2(radius, y));
         }
 
-        if (capped) points.push_back(Vec2(0, height/2));
+        if (capped) points.push_back(Vec2(0, height));
     }
     Cylinder(Vec3 pos, float radius, float height, bool capped=true, int divisions = -1) : Cylinder(radius, height, capped, divisions)
     {

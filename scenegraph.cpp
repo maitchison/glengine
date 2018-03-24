@@ -43,6 +43,7 @@ Material::Material()
     emission = Color(0,0,0);
     shininess = 40;
     textureId = 0;
+    disableLighting = false;
 };
 
 void Material::Apply(void)
@@ -61,7 +62,10 @@ void Material::Apply(void)
     if (textureId) 
     {
         glEnable(GL_TEXTURE_2D);
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);	
+        if (disableLighting) 
+            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);	
+        else
+            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);	
         glBindTexture(GL_TEXTURE_2D, textureId);
     } else {
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -218,9 +222,11 @@ void SurfaceOfRevolution::drawObject(void)
     int n = points.size();
 
     for (int j = 0; j < (n-1); j++) {
-        glBegin(GL_QUAD_STRIP);    
-        for (int i = 0; i < slices; i++) {            
-            theta = (float)i / (slices-1) * (2 * M_PI);
+        glBegin(GL_QUAD_STRIP);            
+        
+        // cap a partialy swept surface
+        if (sweepAngle != 360) {
+            theta = (2.0 * M_PI * sweepAngle / 360.0);
             x = sin(theta) * points[j].x;
             z = cos(theta) * points[j].x;
             y =  points[j].y;
@@ -236,6 +242,26 @@ void SurfaceOfRevolution::drawObject(void)
             glNormal3f(x/abs,y/abs,z/abs);
             glVertex3f(x,y,z);
         }
+
+        for (int i = 0; i < slices; i++) {            
+            theta = (float)i / (slices-1) * (2.0 * M_PI * sweepAngle / 360.0);
+            x = sin(theta) * points[j].x;
+            z = cos(theta) * points[j].x;
+            y =  points[j].y;
+            abs2 = x*x+y*y+z*z;
+            abs = (abs2 == 0) ? 1 : sqrt(abs2);
+            glNormal3f(x/abs,y/abs,z/abs);
+            glVertex3f(x,y,z);
+            x = sin(theta) * points[(j+1) % n].x;
+            z = cos(theta) * points[(j+1) % n].x;
+            y =  points[j+1].y;
+            abs2 = x*x+y*y+z*z;
+            abs = (abs2 == 0) ? 1 : sqrt(abs2);
+            glNormal3f(x/abs,y/abs,z/abs);
+            glVertex3f(x,y,z);
+        }        
+        
+
         glEnd();
     }
     

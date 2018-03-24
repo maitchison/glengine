@@ -70,6 +70,7 @@ const int SCREEN_HEIGHT = 600;
 Camera camera = Camera();
 SceneGraph graph = SceneGraph();
 Light* sunLight;
+Object* bird;
 
 GLuint texId[6];
 
@@ -111,8 +112,55 @@ void initSkyBox()
 
 void initAnimatedModels()
 {
-    Object* test = new ToyLighthouse();
-    graph.Add(test);
+    // table for items
+    Material* tableMaterial = new Material(Color(0.5,0.5,1.0));    
+    tableMaterial->ambient = Color(Color(0.5,0.5,1.0));
+    tableMaterial->diffuse = Color(Color(0.5,0.5,1.0));
+    tableMaterial->specular = Color(Color(0.0,0.0,0.0));
+
+    Object* tableBase = new Cube(1,1,1);
+    tableBase->material = tableMaterial;
+    tableBase->position = Vec3(4,0,0);    
+    graph.Add(tableBase);
+
+    Object* table = new Cube(2.5,0.1,2);
+    table->material = tableMaterial;
+    table->position = Vec3(4,0.5,0);    
+    
+    graph.Add(table);
+
+    // chest of gold
+    Object* chest = new Chest();
+    chest->position = Vec3(4-0.5,0.5+0.15,0+.5);
+    chest->rotation.y = 180;
+    chest->scale = Vec3(0.15,0.15,0.15);
+    graph.Add(chest);
+
+    // globe
+    Object* globe = new GlobeAndMoon(globe_texture, moon_texture);
+    globe->position = Vec3(4+0.5,0.5+0.25,0+.5);
+    globe->scale = Vec3(0.15,0.15,0.15);
+    graph.Add(globe);
+
+    // turtle
+    Object* turtle = new Turtle();
+    turtle->position = Vec3(4+0.5,0.5+0.15,0-0.5);
+    turtle->rotation.y = 160;
+    graph.Add(turtle);
+
+    // toy lighthouse
+    Object* toy = new ToyLighthouse();
+    toy->position = Vec3(4-0.5,0.5,0-0.5);    
+    graph.Add(toy);
+
+    // flying bird
+    bird = new Bird();
+    bird->position = Vec3(4,1.5,0);    
+    bird->scale = Vec3(0.1,0.1,0.1);
+    bird->rotation.x = 90;
+
+    graph.Add(bird);
+
 
 }
 
@@ -201,9 +249,8 @@ void initialize(void)
     initCamera();
     //initTerrain();
     initSkyBox();
-    initAnimatedModels();
-	
-	//initHouse();
+    initAnimatedModels();	
+	initHouse();
 
 }
 
@@ -239,6 +286,14 @@ void update(void)
 	}
 
     graph.Update(elapsed);
+
+    // update the birds location
+    float theta = currentTime;
+    float phi = 3 * currentTime;
+    float radius = 1.0;
+    bird->position = Vec3(4 + sin(theta) * radius, 1.5 + sin(phi) * 0.1, 0 + cos(theta) * radius);
+    bird->rotation.z = -90 - theta / (M_PI / 180);
+
 
 	
 	glutPostRedisplay();

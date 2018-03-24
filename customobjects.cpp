@@ -20,16 +20,18 @@ Turtle::Turtle()
     Add(body);
             
     // arms
-    Object* leftArm = new Cube();
+    leftArm = new Cube();
     leftArm->position = Vec3(- 0.5, - 0.2, 0);
     leftArm->material = new Material(Color(0.65, 0.95, 0.60));
-    leftArm->scale = Vec3(0.6, 0.1, 0.2);
+    leftArm->scale = Vec3(0.6, 0.1, 0.2);    
+    leftArm->anchor = Vec3(+0.5,0,0);
     Add(leftArm);
 
-    Object* rightArm = new Cube();
+    rightArm = new Cube();
     rightArm->position = Vec3(+0.5, - 0.2, 0);
     rightArm->material = new Material(Color(0.65, 0.95, 0.60));
     rightArm->scale = Vec3(0.6, 0.1, 0.2);
+    rightArm->anchor = Vec3(-0.5,0,0);
     Add(rightArm);
 
     // head
@@ -38,6 +40,20 @@ Turtle::Turtle()
     head->material = new Material(Color(0.65, 0.95, 0.60));
     head->scale = Vec3(0.25, 0.25, 0.25);        
     Add(head);
+
+    this->scale = Vec3(0.25,0.25,0.25);
+
+}
+
+void Turtle::updateObject(float elapsed)
+{
+    timer += elapsed * 5;
+    float rot = sin(timer) * 40;
+    if (rot < -20) rot = -20;
+    if (rot > 20) rot = 20;
+    // update arms
+    rightArm->rotation.y = rot;
+    leftArm->rotation.y = -rot;
 
 }
 
@@ -91,7 +107,8 @@ ToyLighthouse::ToyLighthouse() : Object()
     // main base as object of revolution
 
     std::vector<Vec2> pts = {
-        Vec2(2,0),
+        Vec2(1.2,0),
+        Vec2(1.2,1),
         Vec2(0.5,4),
         Vec2(0.5,5),
         Vec2(0.1,5),
@@ -111,12 +128,64 @@ ToyLighthouse::ToyLighthouse() : Object()
     light->material->ambient = Color(1,0,0);
     light->position.y = 5;
     Add(light);
+
+    Object* lightPart = new Cube(0.2,0.5,0.8);
+    lightPart->material = new Material();
+    lightPart->material->emission = Color(1,1,1);
+    lightPart->position = Vec3(0, 0.25, 0.1);
+    light->Add(lightPart);
+
+
+    this->scale = Vec3(0.15,0.15,0.15);
 }
 
 void ToyLighthouse::updateObject(float elapsed)
 {
-    light->rotation.y += elapsed;
+    light->rotation.y += elapsed * 29;
     //todo: update spotlight  actually this can probably just be attached??
+}
+
+//---------------------------------------------------------------
+// Chest
+//---------------------------------------------------------------
+
+Chest::Chest()
+{
+    Material* wood = new Material(Color(0x594615));
+
+    Object* base = new Cube(4,2,2);
+    base->material = wood;
+    Add(base);
+
+    Object* gold = new Cube(3.5,1.8,1.5);
+    gold->position = Vec3(0,0.2,0);
+    gold->material = new Material(Color(1,1,0.5));
+    gold->material->emission = Color(0.5,0.5,0.1);
+    Add(gold);
+
+    lid = new Cylinder(1.0, 4.0);
+    
+    lid->sweepAngle = 180;
+    lid->rotation.z = 90;
+    lid->position = Vec3(2.1,1,1.1);
+    lid->anchor = Vec3(0,0,1);
+    lid->scale = Vec3(1.1,1.1,1.1);
+    lid->material = wood;
+    
+    Add(lid);
+    
+    // make chest a reasonable size
+    this->scale = Vec3(0.25,0.25,0.25);
+}
+
+void Chest::updateObject(float elapsed)
+{
+    timer += elapsed;
+    float openness = sin(timer) * 2;
+    if (openness < 0) openness = 0;
+    if (openness > 1) openness = 1;
+    lid->rotation.x = openness * 90;
+    // todo: open and close animation for lid    
 }
 
 
@@ -252,33 +321,39 @@ Skybox::Skybox(GLuint textures[6])
     quad = new Quad(Vec3(0,0,size),size*2,size*2);
     quad->rotation.y = 180;
     quad->material = new Material(textures[1]);         
+    quad->material->disableLighting = true;
     Add(quad);
     //left
     quad = new Quad(Vec3(+size,0,0),size*2,size*2);
     quad->rotation.y = -90;
     quad->material = new Material(textures[0]);        
+    quad->material->disableLighting = true;
     Add(quad);
     //right
     quad = new Quad(Vec3(-size,0,0),size*2,size*2);
     quad->rotation.y = +90;
     quad->material = new Material(textures[2]);
+    quad->material->disableLighting = true;
     Add(quad);
     //back
     quad = new Quad(Vec3(0,0,-size),size*2,size*2);
     quad->rotation.y = 0;
     quad->material = new Material(textures[3]);
+    quad->material->disableLighting = true;
     Add(quad);
     //top
     quad = new Quad(Vec3(0,size,0),-size*2,size*2);
     quad->rotation.x = -90;
     quad->rotation.z = 0;
     quad->material = new Material(textures[4]);
+    quad->material->disableLighting = true;
     Add(quad);
     //bottom
     quad = new Quad(Vec3(0,-size,0),-size*2,size*2);
     quad->rotation.x = -90;
     quad->rotation.z = 0;
     quad->material = new Material(textures[5]);
+    quad->material->disableLighting = true;
     Add(quad);
 }
 
@@ -291,7 +366,7 @@ GlobeAndMoon::GlobeAndMoon(GLuint globeTexture, GLuint moonTexture)
 {
     globe = new Sphere();
     moon = new Sphere();    
-    moon->position = Vec3(-3, 0, 0);
+    moon->position = Vec3(-2.2, 0, 0);
     moon->scale = Vec3(0.5,0.5,0.5);
     Add(globe);
     globe->Add(moon);
@@ -303,6 +378,6 @@ GlobeAndMoon::GlobeAndMoon(GLuint globeTexture, GLuint moonTexture)
 
 void GlobeAndMoon::updateObject(float elapsed)
 {
-    globe->rotation.z += elapsed * 11;
+    globe->rotation.z += elapsed * 93;
     moon->rotation.z += elapsed * 17;
 }

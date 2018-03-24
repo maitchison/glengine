@@ -11,6 +11,12 @@ public:
 
 class Turtle: public Object
 {
+private:
+    Object* leftArm;
+    Object* rightArm;
+    float timer = 0;
+protected:
+    void updateObject(float elapsed);    
 public:
     Turtle();
 };
@@ -35,6 +41,18 @@ protected:
     void updateObject(float elapsed);
 public:
     ToyLighthouse();
+};
+
+// A chest that can open and close
+class Chest: public Object
+{
+private:    
+    float timer = 0;
+    Cylinder* lid;
+protected:
+    void updateObject(float elapsed);
+public:
+    Chest();
 };
 
 class House: public Object
