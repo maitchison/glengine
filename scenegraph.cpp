@@ -14,9 +14,20 @@ void SceneGraph::Add(Object* object)
     objects.push_back(object);
 }
 
+void SceneGraph::AddLight(Light* light)
+{
+    lights.push_back(light);
+}
+
 void SceneGraph::Render(Camera camera)
 {
     camera.apply();
+
+    for (int i = 0; i < lights.size(); i++)
+    {
+        lights[i]->Draw();
+    }
+
     for (int i = 0; i < objects.size(); i++)
     {
         objects[i]->Draw();
@@ -37,7 +48,7 @@ void SceneGraph::Update(float elapsed)
 
 Material::Material()
 {
-    ambient = Color(0.1,0.1,0.1);
+    ambient = Color(1,1,1);
     diffuse = Color(1,1,1);
     specular = Color(1,1,1);
     emission = Color(0,0,0);
@@ -169,13 +180,22 @@ void Sphere::drawObject(void)
 
 void Light::drawObject(void)
 {
-    float lightPos[4] = {0,0,0, 1};
-    float lightAmbient[4] = {0.5,0.5,0.5,1};
+    float lightPos[4] = {0.0, 0.0, 0.0, 1.0};
+    float lightAmbient[4] = {0.05,0.05,0.05,0.1};
+    float lightColor[4] = {color.r, color.g, color.b, 1.0};    
+    float lightSpec[4] = {color.r, color.g, color.b, 1.0};    
+
+    //stub: only spec    
     glLightfv(lightid, GL_POSITION, lightPos);
     glLightfv(lightid, GL_AMBIENT, lightAmbient);
-
-    //stub: draw light in world
-    glutSolidSphere(1.0, 4, 4);
+    glLightfv(lightid, GL_DIFFUSE, lightColor);
+    glLightfv(lightid, GL_SPECULAR, lightSpec);
+    glLightf(lightid, GL_SPOT_CUTOFF, 180.0f); //omni    
+    
+    if (attenuate)
+        glLightf(lightid, GL_LINEAR_ATTENUATION, 1.0);
+    else
+        glLightf(lightid, GL_LINEAR_ATTENUATION, 0);                
 }
 
 void Quad::drawObject(void)
@@ -190,6 +210,31 @@ void Quad::drawObject(void)
     glTexCoord2f(0,1);
     glVertex3f(-0.5,+0.5,0);
     glEnd();        
+}
+
+
+void Plane::drawObject(void)
+{
+    
+    for (int y = 0; y < (divisionsY-1); y++)
+    {
+        float s;
+        float t;        
+        
+        glBegin(GL_QUAD_STRIP);
+        for (int x = 0; x < divisionsX; x++) {
+            s = (float)x / (divisionsX-1);
+            t = (float)y / (divisionsY-1);    
+            glTexCoord2f(s,t);
+            glNormal3f(0,1,0);
+            glVertex3f(s-0.5, 0, t-0.5);
+            t = ((float)y+1) / (divisionsY-1);    
+            glTexCoord2f(s,t);
+            glNormal3f(0,1,0);
+            glVertex3f(s-0.5, 0, t-0.5);
+        }
+        glEnd();
+    }
 }
 
 //------------------------------------------------------
@@ -273,6 +318,8 @@ void SurfaceOfRevolution::drawObject(void)
 
 void Camera::apply(void)
 {
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 	gluLookAt(x, y, z, x + sin(yAngle), y, z + -cos(yAngle), 0, 1, 0);
 }
 

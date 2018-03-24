@@ -267,7 +267,7 @@ House::House()
     // building walls
 
     Material* wallMaterial = new Material();
-    wallMaterial->diffuse = Color(1,0,0);
+    wallMaterial->diffuse = Color(0xf9e125);
 
     float wallThickness = 0.15;
     float houseLength = 8.0;
@@ -278,27 +278,27 @@ House::House()
     // main room
     
     // back wall
-    wall(Vec2(0,-3), Vec2(houseLength,-3), wallThickness, 0, 3);
+    wall(Vec2(0,-3), Vec2(houseLength,-3), wallThickness, 0, 3, wallMaterial);
 
     // front wall
-    wall(Vec2(0,3), Vec2(8,3), wallThickness, 0, 0.5);
-    wall(Vec2(0,3), Vec2(8,3), wallThickness, 2.5, 3);
-    wall(Vec2(0,3), Vec2(1,3), wallThickness, 0.5, 2.5);
-    wall(Vec2(7,3), Vec2(8,3), wallThickness, 0.5, 2.5);
+    wall(Vec2(0,3), Vec2(8,3), wallThickness, 0, 0.5, wallMaterial);
+    wall(Vec2(0,3), Vec2(8,3), wallThickness, 2.5, 3, wallMaterial);
+    wall(Vec2(0,3), Vec2(1,3), wallThickness, 0.5, 2.5, wallMaterial);
+    wall(Vec2(7,3), Vec2(8,3), wallThickness, 0.5, 2.5, wallMaterial);
 
     // entrance wall
-    wall(Vec2(8,-3), Vec2(8,-2), wallThickness, 0, 3);
-    wall(Vec2(8,-2), Vec2(8,2), wallThickness, 2.2, 3);
-    wall(Vec2(8,2), Vec2(8,3), wallThickness, 0, 3);
+    wall(Vec2(8,-3), Vec2(8,-2), wallThickness, 0, 3, wallMaterial);
+    wall(Vec2(8,-2), Vec2(8,2), wallThickness, 2.2, 3, wallMaterial);
+    wall(Vec2(8,2), Vec2(8,3), wallThickness, 0, 3, wallMaterial);
     
     // far wall
-    wall(Vec2(0,-3), Vec2(0,3), wallThickness, 0, 3);
+    wall(Vec2(0,-3), Vec2(0,3), wallThickness, 0, 3, wallMaterial);
 
     // floor
-    block(Vec3(0, 0,-3), Vec3(8,wallThickness, 3));    
+    block(Vec3(0, 0,-3), Vec3(8,wallThickness, 3), wallMaterial);    
 
     // roof
-    block(Vec3(0, 3,-3), Vec3(8,3-wallThickness, 3));    
+    block(Vec3(-0.2, 3+0.1,-3-0.2), Vec3(8+0.2,3-wallThickness, 3+0.2), wallMaterial);    
 
     // pillars (cover the joins)
     Add(new Cylinder(Vec3(0,0,-3), wallThickness, 3));

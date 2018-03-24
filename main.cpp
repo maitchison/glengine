@@ -70,6 +70,7 @@ const int SCREEN_HEIGHT = 600;
 Camera camera = Camera();
 SceneGraph graph = SceneGraph();
 Light* sunLight;
+Light* cameraLight;
 Object* bird;
 
 GLuint texId[6];
@@ -161,17 +162,31 @@ void initAnimatedModels()
 
     graph.Add(bird);
 
-
 }
 
 void initLights(void)
 {
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-	
+    glEnable(GL_LIGHT1);
+
+    // took ages to find this!  0.2 default ambient is really not the best.
+    float ambientLight[4] = {0,0,0,1};
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientLight);
+
+    // this helps things a bit by correctly calculating the eye view when translating.
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, -1);
+    
 	sunLight = new Light(GL_LIGHT0);
 	sunLight->position = Vec3(-500, +70, -500);
-	graph.Add(sunLight);
+    sunLight->color = Color(1,1,1);    
+	graph.AddLight(sunLight);
+    
+    cameraLight = new Light(GL_LIGHT1);
+    cameraLight->color = Color(1,1,1);
+    cameraLight->attenuate = true;
+	graph.AddLight(cameraLight);
+    
 }
 
 void initTerrain(void)
@@ -181,14 +196,16 @@ void initTerrain(void)
 	// then put grass on top, and dirt under
 	// sand is used for water level.
 
-
 	Material* grass = new Material(Color(0x009933));
 	Material* dirt = new Material(Color(0x996633));
 	Material* sand = new Material(Color(0xcccc00));
 	Material* water = new Material(Color(0x2964c4));
 
-	water->diffuse.a = 0.95f;
-	water->shininess = 40;
+    water->diffuse.a = 0.95f;
+	water->shininess = 50;
+    water->specular = Color(1,1,1);
+
+    Object* terrain = new Object();
 
 	for (int x = 0; x < 41; x ++) {
 		for (int z = 0; z < 41; z ++) {
@@ -200,27 +217,32 @@ void initTerrain(void)
 				Cube* cube = new Cube();
 				cube->position = Vec3(x-20,height,z-20);
 				cube->material = sand;
-				graph.Add(cube);
+				terrain->Add(cube);
 			} else {
 				// grass on top, dirt under neith
 				Cube* cube = new Cube();
 				cube->position = Vec3(x-20,height,z-20);
 				cube->material = grass;
-				graph.Add(cube);
+				terrain->Add(cube);
 
 				cube = new Cube();
 				cube->position = Vec3(x-20,height - 1,z-20);
 				cube->material = dirt;
-				graph.Add(cube);
+				terrain->Add(cube);
 			}
 		}
 	}
 
+    terrain->position.y = -2;
+    graph.Add(terrain);
+
 	// add water plane
-	Cube* ocean = new Cube();
-	ocean->position = Vec3(0,-1.25,0);
-	ocean->scale = Vec3(41.1,5,41.1);
-	ocean->material = water;
+	Plane* ocean = new Plane();
+	ocean->position = Vec3(0,-2,0);
+	ocean->scale = Vec3(200,0,200);
+    ocean->material = water;
+    ocean->divisionsX = 64;
+    ocean->divisionsY = 64;
 	graph.Add(ocean);
 
 }
@@ -247,8 +269,9 @@ void initialize(void)
 	initLights();
 	initTextures();
     initCamera();
-    //initTerrain();
+    initTerrain();
     initSkyBox();
+    
     initAnimatedModels();	
 	initHouse();
 
@@ -284,18 +307,21 @@ void update(void)
 	if (counter % 100 == 0) {
 		printf("fps %f pos (%f,%f,%f)\n", 1.0 / elapsed, camera.x, camera.y, camera.z);
 	}
+    
 
     graph.Update(elapsed);
 
     // update the birds location
-    float theta = currentTime;
-    float phi = 3 * currentTime;
-    float radius = 1.0;
-    bird->position = Vec3(4 + sin(theta) * radius, 1.5 + sin(phi) * 0.1, 0 + cos(theta) * radius);
-    bird->rotation.z = -90 - theta / (M_PI / 180);
-
-
-	
+    if (bird) {
+        float theta = currentTime;
+        float phi = 3 * currentTime;
+        float radius = 1.0;
+        bird->position = Vec3(4 + sin(theta) * radius, 1.5 + sin(phi) * 0.1, 0 + cos(theta) * radius);
+        bird->rotation.z = -90 - theta / (M_PI / 180);    
+    }
+    // update camera light position
+    cameraLight->position = Vec3(camera.x, camera.y, camera.z);
+    
 	glutPostRedisplay();
 	lastFrameTime = currentTime;
 

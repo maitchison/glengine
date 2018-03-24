@@ -10,14 +10,18 @@
 
 class Object;
 class Camera;
+class Light;
 
 class SceneGraph
 {
 protected:
     std::vector<Object*> objects;
+    std::vector<Light*> lights;
 public:
     /** Adds object to scenegraph. */
     void Add(Object* object);
+
+    void AddLight(Light* light);
 
     /** Draws all objects in the given scenegraph as seen by this camera. */
     void Render(Camera camera);
@@ -57,7 +61,7 @@ public:
     Color emission;
     float shininess;
     GLuint textureId;
-    bool disableLighting;
+    bool disableLighting;    
 public:
     Material();
     Material(Color color) : Material() { ambient = diffuse = color; };
@@ -116,11 +120,12 @@ class Light: public Object
 
 protected:
     GLuint lightid;
-
-protected:
+    
     void drawObject(void) override;
 
 public:
+    bool attenuate = false;
+
     Light(GLuint lightid) : Object() { this->lightid = lightid; }
 };
 
@@ -139,6 +144,21 @@ public:
     Quad() : Object() {};
     Quad(Vec3 position, float width, float height) : Object() { this->position = position; this->scale = Vec3(width, height, 1); };
 };
+
+// Like a quad but with sub divisions.
+class Plane: public Object
+{
+    void drawObject(void) override;    
+public:
+
+    int divisionsX = 16;
+    int divisionsY = 16;
+
+
+    Plane() : Object() {};
+    Plane(Vec3 position, float width, float height) : Object() { this->position = position; this->scale = Vec3(width, height, 1); };
+};
+
 
 class Sphere: public Object
 {
