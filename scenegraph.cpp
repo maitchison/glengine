@@ -11,7 +11,7 @@ Material DEFAULT_MATERIAL = Material();
 
 void SceneGraph::Add(Object* object)
 {
-    objects.push_back(object);
+    objects.push_back(object);    
 }
 
 void SceneGraph::AddLight(Light* light)
@@ -40,6 +40,18 @@ void SceneGraph::Update(float elapsed)
     {
         objects[i]->Update(elapsed);
     }
+}
+
+Object* SceneGraph::getObjectAtPosition(Vec3 pos)
+{
+
+    for (int i = 0; i < objects.size(); i++)
+    {
+        if (objects[i]->isInside(pos)) {
+            return objects[i];
+        }
+    }
+    return NULL;
 }
 
 //------------------------------------------------------
@@ -106,10 +118,15 @@ Object::Object(Vec3 position) : Object()
 void Object::Add(Object* object)
 {
     children.push_back(object);
+    object->parent = this;
 }
 
 void Object::Draw(void)
 {
+    if (!visible) {
+        return;
+    }
+
     // apply our Material
     if (material) { 
         material->Apply(); 

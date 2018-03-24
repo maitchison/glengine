@@ -8,6 +8,9 @@ Animated objects
 4. Vase (surface of revolution, maybe it spins?)
 5. Opening Chest
 
+Modes:
+flying / walking
+pov / camera
 
 
 
@@ -16,10 +19,10 @@ today:
 [done] build house
 [done] surface of revolution
 [done] skybox
-put 5 objects in house
+[done] put 5 objects in house
 
 
-collision detection
+[done] collision detection
 simple shadows
 
 later (for fun):
@@ -52,11 +55,15 @@ Skybox is from https://reije081.home.xs4all.nl/skyboxes/ [edited]
 
 #include "scenegraph.h"
 #include "customobjects.h"
+#include "player.h"
 
 float lastFrameTime = 0.0f;
 float currentTime = 0.0f;
 int counter = 0;
 int frameOn = 0;
+
+// records if key is down
+bool key[256];
 
 GLuint grass_texture;
 GLuint water_texture;
@@ -69,9 +76,12 @@ const int SCREEN_HEIGHT = 600;
 
 Camera camera = Camera();
 SceneGraph graph = SceneGraph();
+Player player = Player(&graph);
 Light* sunLight;
 Light* cameraLight;
 Object* bird;
+
+float vVel = 0.0;
 
 GLuint texId[6];
 
@@ -210,28 +220,37 @@ void initTerrain(void)
 
 			int height = (int)(10.0*noise.octaveNoise(x/100.0, z/100.0, 8) - 3.0);
 
+            // make sure height is correct around the house
+            if ((abs(x-24) <= 4) && (abs(z-20) <= 5)) {
+                height = 1;
+            }
+
 			if (height <= 1) {
 				// grass on top, dirt under neith
 				Cube* cube = new Cube();
 				cube->position = Vec3(x-20,height,z-20);
 				cube->material = sand;
+                cube->solid = true;
 				terrain->Add(cube);
 			} else {
 				// grass on top, dirt under neith
 				Cube* cube = new Cube();
 				cube->position = Vec3(x-20,height,z-20);
 				cube->material = grass;
+                cube->solid = true;
 				terrain->Add(cube);
 
 				cube = new Cube();
 				cube->position = Vec3(x-20,height - 1,z-20);
 				cube->material = dirt;
+                cube->solid = true;
 				terrain->Add(cube);
 			}
 		}
 	}
     
-    terrain->position.y = -2;
+    terrain->position.y = -1.5;
+    terrain->solid = true;
     graph.Add(terrain);
 
 	// add water plane
@@ -242,6 +261,14 @@ void initTerrain(void)
     ocean->divisionsX = 64;
     ocean->divisionsY = 64;
 	graph.Add(ocean);
+
+    // add safety walls
+    Object* floor = new Cube(200,1,200);
+    floor->position = Vec3(0,-5,0);
+    floor->visible = false;
+    floor->solid = true;
+	
+    graph.Add(floor);
     
 
 }
@@ -252,12 +279,11 @@ void initHouse(void)
 	graph.Add(house);
 }
 
-void initCamera()
+void initPlayer()
 {
-    camera.x = 7.37;
-    camera.y = 1.0;
-    camera.z = 1.5;
-    camera.yAngle = -20;    
+    //player.position = Vec3(7.37, 1.0, 1.5);
+    player.position = Vec3(7.37, 5.0, 1.5);
+    player.yAngle = -20;    
 }
 
 void initialize(void)
@@ -265,9 +291,9 @@ void initialize(void)
 	glClearColor(0.1f, 0.0f, 0.5f, 1.0f);
 	glEnable(GL_DEPTH);
 	glEnable(GL_DEPTH_TEST);
-	initLights();
+ 	initLights();
 	initTextures();
-    initCamera();
+    initPlayer();
     initTerrain();
     initSkyBox();
     
@@ -292,6 +318,20 @@ void display(void)
 	glutSwapBuffers();
 }
 
+void updateInput()
+{
+    float moveSpeed = 0.1f;
+    float turnSpeed = 0.05f;
+    if (key['w']) player.moveForward(moveSpeed);
+    if (key['s']) player.moveForward(-moveSpeed);
+	if (key['q']) player.turn(-turnSpeed);
+    if (key['e']) player.turn(+turnSpeed);
+    if (key['a']) player.pan(-moveSpeed);
+    if (key['d']) player.pan(+moveSpeed);
+    if (key[' ']) player.jump();	
+}
+
+
 void update(void)
 {
 	currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
@@ -305,8 +345,15 @@ void update(void)
 
 	if (counter % 100 == 0) {
 		printf("fps %f pos (%f,%f,%f)\n", 1.0 / elapsed, camera.x, camera.y, camera.z);
-	}
-    
+	}    
+
+    // update the camera, make sure same is behind player a little.
+    updateInput();
+    player.update(elapsed);
+    camera.x = player.position.x + sin(-player.yAngle) * 0.2;
+    camera.y = player.position.y+1.5;
+    camera.z = player.position.z + cos(-player.yAngle) * 0.2;
+    camera.yAngle = player.yAngle;
 
     graph.Update(elapsed);
 
@@ -318,45 +365,23 @@ void update(void)
         bird->position = Vec3(4 + sin(theta) * radius, 1.5 + sin(phi) * 0.1, 0 + cos(theta) * radius);
         bird->rotation.z = -90 - theta / (M_PI / 180);    
     }
+
     // update camera light position
-    cameraLight->position = Vec3(camera.x, camera.y, camera.z);
+    cameraLight->position = player.position;
     
 	glutPostRedisplay();
 	lastFrameTime = currentTime;
 
 }
 
-void keyboard(unsigned char key, int x, int y)
+void keyboardDown(unsigned char code, int x, int y)
 {
-    float moveSpeed = 0.2f;
-    float turnSpeed = 0.09f;
-	switch (key)
-	{
-	case 'w':
-		camera.move(moveSpeed);
-		break;
-	case 's':
-		camera.move(-moveSpeed);
-		break;
-	case 'q':
-		camera.yAngle -= turnSpeed;
-		break;
-	case 'e':
-		camera.yAngle += turnSpeed;
-		break;
-	case 'a':
-		camera.pan(-moveSpeed);
-		break;
-	case 'd':
-		camera.pan(moveSpeed);
-		break;
-	case ' ':
-		camera.y += moveSpeed;
-		break;
-	case 'c':
-		camera.y -= moveSpeed;
-		break;
-	}
+    key[code] = true;
+}
+
+void keyboardUp(unsigned char code, int x, int y)
+{
+    key[code] = false;
 }
 
 int main(int argc, char **argv)
@@ -369,7 +394,8 @@ int main(int argc, char **argv)
 	initialize();
 	glutDisplayFunc(display);
 	glutIdleFunc(update);
-	glutKeyboardFunc(keyboard);
+	glutKeyboardFunc(keyboardDown);
+    glutKeyboardUpFunc(keyboardUp);
 	glutMainLoop();
 	return 0;
 }

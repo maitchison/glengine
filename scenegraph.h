@@ -28,6 +28,9 @@ public:
 
     /** Updates all objects animation over the given number seconds. */
     void Update(float elapsed);
+
+    /** Returns colliding object at location or NULL if none */
+    Object* getObjectAtPosition(Vec3 pos);
 };
 
 /** Defines a camera. */
@@ -73,6 +76,9 @@ public:
 class Object
 {
 protected:
+
+    Object* parent = NULL;
+    
     /** Handles custom part of object draw. */
     virtual void drawObject(void);
 
@@ -83,7 +89,7 @@ protected:
     std::vector<Object*> children;
 
 public:
-    
+
     /** Anchor point (in object space). */
     Vec3 anchor;
 
@@ -102,11 +108,43 @@ public:
     /** material, maybe null */
     Material* material = NULL;
 
+    bool visible = true;
+
+    bool solid = false;
+
     /** Draws the object to current view. */
     virtual void Draw(void);
 
     /** update the object, elapsed is in seconds since last update. */
     virtual void Update(float elapsed);
+
+    /** returns if point collides with this object. */
+    virtual bool isInside(Vec3 pnt) { 
+        if (!solid) return false;        
+        for (int i = 0; i < children.size(); i++)
+        {
+            if (children[i]->isInside(pnt)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /** Transforms from world space into object space. */
+    Vec3 worldToObject(Vec3 pnt)
+    {
+        if (parent) {
+            pnt = parent->worldToObject(pnt);
+        }
+    
+        // note: rotation and anchor not implemented yet.
+        pnt.x = (pnt.x / scale.x) - position.x;        
+        pnt.y = (pnt.y / scale.y) - position.y;        
+        pnt.z = (pnt.z / scale.z) - position.z;        
+
+        return pnt;
+    }
+
 
 public:
     Object();
@@ -135,6 +173,16 @@ class Cube: public Object
 public:
     Cube() : Object() {};
     Cube(float width, float height, float depth) : Cube() { this->scale = Vec3(width, height, depth); };
+
+    virtual bool isInside(Vec3 pnt) { 
+        pnt = worldToObject(pnt);
+        if (
+            (pnt.x < -0.5) || (pnt.x > 0.5) ||
+            (pnt.y < -0.5) || (pnt.y > 0.5) ||
+            (pnt.z < -0.5) || (pnt.z > 0.5)
+        ) return false;
+        return true;
+    };
 };
 
 class Quad: public Object
