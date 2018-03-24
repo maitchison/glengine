@@ -68,6 +68,8 @@ void Material::Apply(void)
     if (diffuse.a != 1.0) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    } else {
+        glDisable(GL_BLEND);
     }
 
     if (textureId) 
@@ -79,7 +81,7 @@ void Material::Apply(void)
             glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);	
         glBindTexture(GL_TEXTURE_2D, textureId);
     } else {
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
     }
 }
 
@@ -185,7 +187,6 @@ void Light::drawObject(void)
     float lightColor[4] = {color.r, color.g, color.b, 1.0};    
     float lightSpec[4] = {color.r, color.g, color.b, 1.0};    
 
-    //stub: only spec    
     glLightfv(lightid, GL_POSITION, lightPos);
     glLightfv(lightid, GL_AMBIENT, lightAmbient);
     glLightfv(lightid, GL_DIFFUSE, lightColor);
@@ -211,7 +212,6 @@ void Quad::drawObject(void)
     glVertex3f(-0.5,+0.5,0);
     glEnd();        
 }
-
 
 void Plane::drawObject(void)
 {

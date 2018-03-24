@@ -308,6 +308,59 @@ House::House()
 }    
 
 //---------------------------------------------------------------
+// WaterPlane
+//---------------------------------------------------------------
+
+void WaterPlane::updateObject(float elapsed)
+{
+    timer += elapsed;
+}
+
+float WaterPlane::sample(float x, float y)
+{
+    return 
+        // low freq strong
+        (3*sin(x*5.124 + timer * 5.0/16)+
+        3*sin(y*2.124 - timer * 3.0/16)+
+        // high freq weak
+        sin(x-41.24 + timer * 7.0/16)+
+        sin(y*61.24 - timer * 11.0/16)) * 0.2;            
+}
+
+void WaterPlane::drawObject(void)
+{
+    
+    for (int y = 0; y < (divisionsY-1); y++)
+    {
+        float s;
+        float t;        
+
+        float dx = 1.0 / (divisionsX-1);
+        float dy = 1.0 / (divisionsX-1);
+        
+        glBegin(GL_QUAD_STRIP);
+        for (int x = 0; x < divisionsX; x++) {
+            s = (float)x / (divisionsX-1);
+            t = (float)y / (divisionsY-1);    
+
+            // calculate delta
+            float deltaX = sample(s-dx,t) - sample(s+dx,t);
+            float deltaY = sample(s,t-dy) - sample(s,t+dy);        
+
+            glTexCoord2f(s,t);
+            glNormal3f(deltaX,1,deltaY);
+            glVertex3f(s-0.5, sample(s,t), t-0.5);
+            t = ((float)y+1) / (divisionsY-1);    
+            glTexCoord2f(s,t);
+            glNormal3f(deltaX,1,deltaY);
+            glVertex3f(s-0.5, sample(s,t), t-0.5);
+        }
+        glEnd();
+    }
+}
+
+
+//---------------------------------------------------------------
 // Skybox
 //---------------------------------------------------------------
 

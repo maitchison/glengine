@@ -76,3 +76,15 @@ class Skybox : public Object
 public:
     Skybox(GLuint textures[6]);
 };
+
+class WaterPlane: public Plane
+{
+private:
+    float timer = 0;
+    // get height at given location.
+    float sample(float x, float y);
+
+protected:
+    void updateObject(float elapsed);
+    void drawObject();
+};

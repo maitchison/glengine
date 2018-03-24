@@ -201,9 +201,7 @@ void initTerrain(void)
 	Material* sand = new Material(Color(0xcccc00));
 	Material* water = new Material(Color(0x2964c4));
 
-    water->diffuse.a = 0.95f;
-	water->shininess = 50;
-    water->specular = Color(1,1,1);
+    water->diffuse.a = 0.95f;	
 
     Object* terrain = new Object();
 
@@ -232,18 +230,19 @@ void initTerrain(void)
 			}
 		}
 	}
-
+    
     terrain->position.y = -2;
     graph.Add(terrain);
 
 	// add water plane
-	Plane* ocean = new Plane();
-	ocean->position = Vec3(0,-2,0);
-	ocean->scale = Vec3(200,0,200);
+	Plane* ocean = new WaterPlane();
+	ocean->position = Vec3(0,-3,0);
+	ocean->scale = Vec3(200,1,200);
     ocean->material = water;
     ocean->divisionsX = 64;
     ocean->divisionsY = 64;
 	graph.Add(ocean);
+    
 
 }
 
