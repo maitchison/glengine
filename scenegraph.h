@@ -21,6 +21,9 @@ public:
 
     /** Draws all objects in the given scenegraph as seen by this camera. */
     void Render(Camera camera);
+
+    /** Updates all objects animation over the given number seconds. */
+    void Update(float elapsed);
 };
 
 /** Defines a camera. */
@@ -68,6 +71,9 @@ protected:
     /** Handles custom part of object draw. */
     virtual void drawObject(void);
 
+    /** Handles custom part of object update. */
+    virtual void updateObject(float elapsed);
+
     /** Children of this scenegraph object. */
     std::vector<Object*> children;
 
@@ -93,6 +99,9 @@ public:
 
     /** Draws the object to current view. */
     virtual void Draw(void);
+
+    /** update the object, elapsed is in seconds since last update. */
+    virtual void Update(float elapsed);
 
 public:
     Object();
@@ -132,7 +141,12 @@ public:
 
 class Sphere: public Object
 {
+private:
+    GLUquadricObj*	q;
+protected:
     void drawObject(void) override;    
+public:
+    Sphere();
 };
 
 class SurfaceOfRevolution: public Object

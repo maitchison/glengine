@@ -32,7 +32,9 @@ roaming animals (turtles and birds)
 graphic for sun (just a yellow sphere)
 alternative camera view (from turtles perspective)
 
-
+resources
+earth: lab3
+moon: texture.com
 
 */
 
@@ -49,6 +51,7 @@ Skybox is from https://reije081.home.xs4all.nl/skyboxes/ [edited]
 #include "utils.h"
 
 #include "scenegraph.h"
+#include "customobjects.h"
 
 float lastFrameTime = 0.0f;
 float currentTime = 0.0f;
@@ -57,6 +60,8 @@ int frameOn = 0;
 
 GLuint grass_texture;
 GLuint water_texture;
+GLuint globe_texture;
+GLuint moon_texture;
 siv::PerlinNoise noise = siv::PerlinNoise(123);
 
 const int SCREEN_WIDTH = 800;
@@ -68,299 +73,13 @@ Light* sunLight;
 
 GLuint texId[6];
 
-//---------------------------------------------------------------
-
-// house object
-
-class Turtle: public Object
-{
-public:
-    Turtle() : Object()
-    {
-        // shell
-        Object* shell = new Cube();
-        shell->material = new Material(Color(0, 0.5, 0));
-	    shell->scale = Vec3(1, 0.3, 1);	    
-        Add(shell);
-
-	    // body
-        Object* body = new Cube();
-	    body->position = Vec3(0, -0.2, 0);
-	    body->material = new Material(Color(0.65, 0.55, 0.60));
-	    body->scale = Vec3(0.8, 0.2, 0.9);
-        Add(body);
-	            
-        // arms
-        Object* leftArm = new Cube();
-        leftArm->position = Vec3(- 0.5, - 0.2, 0);
-        leftArm->material = new Material(Color(0.65, 0.95, 0.60));
-	    leftArm->scale = Vec3(0.6, 0.1, 0.2);
-        Add(leftArm);
-
-        Object* rightArm = new Cube();
-        rightArm->position = Vec3(+0.5, - 0.2, 0);
-        rightArm->material = new Material(Color(0.65, 0.95, 0.60));
-	    rightArm->scale = Vec3(0.6, 0.1, 0.2);
-        Add(rightArm);
-
-        // head
-        Object* head = new Cube();            
-        head->position = Vec3(0, - 0.2, 0.6);
-        head->material = new Material(Color(0.65, 0.95, 0.60));
-        head->scale = Vec3(0.25, 0.25, 0.25);        
-        Add(head);
-
-    }
-};
-
-class Bird: public Object
-{
-public:
-    Bird() : Object()
-    {
-        // body
-        Object* body = new Cube();
-        body->material = new Material(Color(0.9, 0.5, 0.45));
-	    body->scale = Vec3(1, 2, 0.8);	    
-        Add(body);
-	    
-        // head
-        Object* head = new Cube();            
-        head->position = Vec3(0, +1.0, 0.6);
-        head->material = new Material(Color(0.9, 0.65, 0.60));
-        head->scale = Vec3(0.65, 0.45, 0.95);        
-        head->rotation.x = 15;
-        Add(head);
-
-        // wings
-        Object* leftWing = new Cube();            
-        leftWing->position = Vec3(0.5, 0.35, 0.2);
-        leftWing->material = new Material(Color(0.2, 0.6, 0.2));
-        leftWing->scale = Vec3(0.15, 1.5, 0.75);                
-        leftWing->anchor = Vec3(0,-0.5, -0.5);
-        leftWing->rotation.x = -155;
-        Add(leftWing);
-
-        Object* rightWing = new Cube();            
-        rightWing->position = Vec3(-0.5, 0.35, 0.2);
-        rightWing->material = new Material(Color(0.2, 0.6, 0.2));
-        rightWing->scale = Vec3(0.15, 1.5, 0.75);                
-        rightWing->anchor = Vec3(0,-0.5, -0.5);
-        rightWing->rotation.x = -155;
-        Add(rightWing);
-
-        scale = Vec3(0.3,0.3,0.3);
-
-    }
-
-};
-
-class FancyBox: public Object
-{
-public:
-    FancyBox() : Object()
-    {
-        // box
-        Object* box = new Cube();
-        box->material = new Material(Color(0.5, 0.5, 0.5));	    
-        Add(box);
-	    
-        // spheres
-        Object* sphere1 = new Sphere();
-        sphere1->position = Vec3(-2, 0, 0);
-        sphere1->scale = Vec3(0.2,0.2,0.2);
-        Add(sphere1);
-
-        Object* sphere2 = new Sphere();
-        sphere2->position = Vec3(+2, 0, 0);
-        sphere2->scale = Vec3(0.2,0.2,0.2);
-        Add(sphere2);
-
-        Object* sphere3 = new Sphere();
-        sphere3->position = Vec3(0, -2, 0);
-        sphere3->scale = Vec3(0.2,0.2,0.2);
-        Add(sphere3);        
-
-    }
-
-};
-
-
-
-class House: public Object
-{
-private:
-	// create a new block
-	void block(Vec3 bottomLeft, Vec3 topRight, Material* material = NULL)
-	{
-        Vec3 mid = Vec3((bottomLeft.x + topRight.x) / 2, (bottomLeft.y + topRight.y) / 2, (bottomLeft.z + topRight.z) / 2);
-        Vec3 size = Vec3(-(bottomLeft.x - topRight.x), -(bottomLeft.y - topRight.y), -(bottomLeft.z - topRight.z));
-		Object* block = new Cube();
-        block->scale = size;
-		block->position = mid;
-		block->material = material;
-		Add(block);
-	}
-
-    void marker(Vec3 pos, Color color = Color(1,0,0))
-    {
-        float size = 1;
-        Object* block = new Cube();
-        block->scale = Vec3(size,size,size);
-		block->position = pos;
-		block->material = new Material();
-        block->material->emission = color;
-		Add(block);
-    }
-
-    void wall(Vec2 p1, Vec2 p2, float thickness, float startHeight, float endHeight, Material* material = NULL)
-    {
-        float dx = p2.x - p1.x;
-        float dy = p2.y - p1.y;
-        float wallLength = sqrtf(dx*dx + dy*dy);
-        float wallAngle = atan2(dy, dx) / M_PI * 180.0 + 90;
-
-        Object* wall = new Cube();
-        wall->anchor = Vec3(0, -0.5, +0.5);
-        wall->position = Vec3(p1.x, startHeight, p1.y);
-        wall->scale = Vec3(thickness, endHeight - startHeight, wallLength);
-        wall->rotation = Vec3(0, -wallAngle, 0);
-        wall->material = material;
-        Add(wall);
-
-    }
-
-public:
-	House()
-	{
-
-        
-		Object* tower = new Cylinder(2, 21);
-        Add(tower);
-
-		// the light
-		Object* light = new Cylinder(1.5, 3);		
-		light->position.y = 21;
-		light->material = new Material();
-		light->material->emission = Color(1,0.9,0.7);
-		Add(light);
-
-		// the cap
-		Object* cap = new Cylinder(2, 1.5);		
-		cap->position.y = 23;
-		Add(cap);
-
-		// tower rings
-		Material* ringMaterial = new Material();
-		ringMaterial->diffuse = Color(0.5,0.5,0.5);
-		ringMaterial->specular = Color(0,0,0);
-		
-		for (int i = 0; i < 4; i ++) 
-		{
-			Object* ring = new Cylinder(2.1,0.4);
-			ring->position.y = i * 7;
-			ring->material = ringMaterial;
-			Add(ring);
-		}
-        
-		// building walls
-
-		Material* wallMaterial = new Material();
-		wallMaterial->diffuse = Color(1,0,0);
-
-        float wallThickness = 0.15;
-        float houseLength = 8.0;
-        float houseWidth = 3.0;
-        float houseHeight = 3.0;
-
-        // -----------------------------------
-		// main room
-        
-        // back wall
-        wall(Vec2(0,-3), Vec2(houseLength,-3), wallThickness, 0, 3);
-
-        // front wall
-        wall(Vec2(0,3), Vec2(8,3), wallThickness, 0, 0.5);
-        wall(Vec2(0,3), Vec2(8,3), wallThickness, 2.5, 3);
-        wall(Vec2(0,3), Vec2(1,3), wallThickness, 0.5, 2.5);
-        wall(Vec2(7,3), Vec2(8,3), wallThickness, 0.5, 2.5);
-
-        // entrance wall
-        wall(Vec2(8,-3), Vec2(8,-2), wallThickness, 0, 3);
-        wall(Vec2(8,-2), Vec2(8,2), wallThickness, 2.2, 3);
-        wall(Vec2(8,2), Vec2(8,3), wallThickness, 0, 3);
-        
-        // far wall
-        wall(Vec2(0,-3), Vec2(0,3), wallThickness, 0, 3);
-
-        // floor
-        block(Vec3(0, 0,-3), Vec3(8,wallThickness, 3));    
-
-        // roof
-        block(Vec3(0, 3,-3), Vec3(8,3-wallThickness, 3));    
-
-        // pillars (cover the joins)
-        Add(new Cylinder(Vec3(0,0,-3), wallThickness, 3));
-        Add(new Cylinder(Vec3(0,0,+3), wallThickness, 3));
-        Add(new Cylinder(Vec3(8,0,-3), wallThickness, 3));
-        Add(new Cylinder(Vec3(8,0,+3), wallThickness, 3));
-
-
-		
-	}    
-};
-
-// Renders skybox on a very far away cube.
-class Skybox : public Object
-{
-public:
-    Skybox(GLuint textures[6])
-    {
-        Quad* quad;
-
-        float size = 1000;
-        
-        //front
-        quad = new Quad(Vec3(0,0,size),size*2,size*2);
-        quad->rotation.y = 180;
-        quad->material = new Material(textures[1]);         
-        Add(quad);
-        //left
-        quad = new Quad(Vec3(+size,0,0),size*2,size*2);
-        quad->rotation.y = -90;
-        quad->material = new Material(textures[0]);        
-        Add(quad);
-        //right
-        quad = new Quad(Vec3(-size,0,0),size*2,size*2);
-        quad->rotation.y = +90;
-        quad->material = new Material(textures[2]);
-        Add(quad);
-        //back
-        quad = new Quad(Vec3(0,0,-size),size*2,size*2);
-        quad->rotation.y = 0;
-        quad->material = new Material(textures[3]);
-        Add(quad);
-        //top
-        quad = new Quad(Vec3(0,size,0),-size*2,size*2);
-        quad->rotation.x = -90;
-        quad->rotation.z = 0;
-        quad->material = new Material(textures[4]);
-        Add(quad);
-        //bottom
-        quad = new Quad(Vec3(0,-size,0),-size*2,size*2);
-        quad->rotation.x = -90;
-        quad->rotation.z = 0;
-        quad->material = new Material(textures[5]);
-        Add(quad);
-    }
-};
-
-//---------------------------------------------------------------
-
 void initTextures(void)
 {
 	grass_texture = loadTexture("grass.png");
 	water_texture = loadTexture("water.png");
+    globe_texture = loadTexture("earth.png");
+	moon_texture = loadTexture("moon.png");    
+
 }
 
 void loadSkyBoxTexture(char* filename, GLuint texId)
@@ -392,20 +111,8 @@ void initSkyBox()
 
 void initAnimatedModels()
 {
-    /*
-    Turtle* turtle = new Turtle();
-    turtle->position = Vec3(0,0,0);
-    graph.Add(turtle);
-    */
-
-    /*
-    Bird* bird = new Bird();
-    bird->position = Vec3(0,0,0);
-    graph.Add(bird);
-    */
-    
-    FancyBox* box = new FancyBox();
-    graph.Add(box);
+    Object* test = new ToyLighthouse();
+    graph.Add(test);
 
 }
 
@@ -530,6 +237,9 @@ void update(void)
 	if (counter % 100 == 0) {
 		printf("fps %f pos (%f,%f,%f)\n", 1.0 / elapsed, camera.x, camera.y, camera.z);
 	}
+
+    graph.Update(elapsed);
+
 	
 	glutPostRedisplay();
 	lastFrameTime = currentTime;

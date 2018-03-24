@@ -23,6 +23,14 @@ void SceneGraph::Render(Camera camera)
     }
 }
 
+void SceneGraph::Update(float elapsed)
+{
+    for (int i = 0; i < objects.size(); i++)
+    {
+        objects[i]->Update(elapsed);
+    }
+}
+
 //------------------------------------------------------
 // material
 //------------------------------------------------------
@@ -53,6 +61,7 @@ void Material::Apply(void)
     if (textureId) 
     {
         glEnable(GL_TEXTURE_2D);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);	
         glBindTexture(GL_TEXTURE_2D, textureId);
     } else {
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -118,7 +127,21 @@ void Object::Draw(void)
     glPopMatrix();
 }
 
+void Object::Update(float elapsed)
+{    
+    // update us
+    updateObject(elapsed);
+    // update children
+    for (int i = 0; i < children.size(); i++) {
+        children[i]->Update(elapsed);
+    }
+}
+
 void Object::drawObject(void)
+{
+}
+
+void Object::updateObject(float elapsed)
 {
 }
 
@@ -127,15 +150,25 @@ void Cube::drawObject(void)
     glutSolidCube(1.0);
 }
 
+Sphere::Sphere() : Object()
+{
+    q = gluNewQuadric();	
+	gluQuadricDrawStyle(q, GLU_FILL );
+	gluQuadricNormals(q, GLU_SMOOTH );
+	gluQuadricTexture(q, GL_TRUE);
+}
+
 void Sphere::drawObject(void)
 {
-    glutSolidSphere(1.0, 64, 64);
+    gluSphere(q, 1.0, 64, 64);
 }
 
 void Light::drawObject(void)
 {
     float lightPos[4] = {0,0,0, 1};
+    float lightAmbient[4] = {0.5,0.5,0.5,1};
     glLightfv(lightid, GL_POSITION, lightPos);
+    glLightfv(lightid, GL_AMBIENT, lightAmbient);
 
     //stub: draw light in world
     glutSolidSphere(1.0, 4, 4);
@@ -184,9 +217,8 @@ void SurfaceOfRevolution::drawObject(void)
 
     int n = points.size();
 
-    glBegin(GL_QUAD_STRIP);
-    for (int j = 0; j < n; j++) {
-
+    for (int j = 0; j < (n-1); j++) {
+        glBegin(GL_QUAD_STRIP);    
         for (int i = 0; i < slices; i++) {            
             theta = (float)i / (slices-1) * (2 * M_PI);
             x = sin(theta) * points[j].x;
@@ -204,8 +236,9 @@ void SurfaceOfRevolution::drawObject(void)
             glNormal3f(x/abs,y/abs,z/abs);
             glVertex3f(x,y,z);
         }
+        glEnd();
     }
-    glEnd();
+    
 }
 
 //------------------------------------------------------
