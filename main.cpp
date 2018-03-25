@@ -25,6 +25,9 @@ today:
 [done] collision detection
 simple shadows
 
+[trilinear filtering]
+[show mip maps mode]
+
 later (for fun):
 proper day / night cycle
 physics based movement (i.e. jumping, walking up blocks etc)
@@ -87,7 +90,7 @@ float vVel = 0.0;
 const int CM_PLAYER = 0;
 const int CM_SECURITY = 1;
 
-int cameraMode = CM_SECURITY;
+int cameraMode = CM_PLAYER;
 
 GLuint texId[6];
 
@@ -98,16 +101,16 @@ void initTextures(void)
     globe_texture = loadTexture("earth.png");
 	moon_texture = loadTexture("moon.png");    
     sand_texture = loadTexture("sand.png");    
-
 }
 
 void loadSkyBoxTexture(char* filename, GLuint texId)
 {
     printf("loading %s\n", filename);
     glBindTexture(GL_TEXTURE_2D, texId);
+	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 	loadTGA(filename);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);	
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);	
@@ -233,7 +236,7 @@ void initTerrain(void)
             }
 
 			if (height <= 1) {
-				// grass on top, dirt under neith
+				// sand at low heights
 				Cube* cube = new Cube();
 				cube->position = Vec3(x-20,height,z-20);
 				cube->material = sand;
@@ -336,6 +339,7 @@ void updateInput()
     if (key['e']) player.turn(+turnSpeed);
     if (key['a']) player.pan(-moveSpeed);
     if (key['d']) player.pan(+moveSpeed);
+    if (key['c']) player.height = 0.5; else player.height = 1.2;
     if (key[' ']) player.jump();	
 }
 
@@ -361,7 +365,7 @@ void update(void)
             updateInput();
             player.update(elapsed);
             camera.x = player.position.x + sin(-player.yAngle) * 0.2;
-            camera.y = player.position.y+1.2;
+            camera.y = player.position.y + player.height;
             camera.z = player.position.z + cos(-player.yAngle) * 0.2;
             camera.yAngle = player.yAngle;
             break;
@@ -396,6 +400,28 @@ void update(void)
 void keyboardDown(unsigned char code, int x, int y)
 {
     key[code] = true;
+
+    // process special function keys.
+    switch (code) {
+        case GLUT_KEY_F1:            
+            cameraMode = (cameraMode + 1) % 2;
+            printf("Switching camera mode to %d", cameraMode);
+            break;
+    }
+
+}
+
+
+void keyboardSpecialDown(int code, int x, int y)
+{
+    // process special function keys.
+    switch (code) {
+        case GLUT_KEY_F1:            
+            cameraMode = (cameraMode + 1) % 2;
+            printf("Switching camera mode to %d", cameraMode);
+            break;
+    }
+
 }
 
 void keyboardUp(unsigned char code, int x, int y)
@@ -413,8 +439,9 @@ int main(int argc, char **argv)
 	initialize();
 	glutDisplayFunc(display);
 	glutIdleFunc(update);
+    glutSpecialFunc(keyboardSpecialDown);
 	glutKeyboardFunc(keyboardDown);
     glutKeyboardUpFunc(keyboardUp);
-	glutMainLoop();
+    glutMainLoop();
 	return 0;
 }

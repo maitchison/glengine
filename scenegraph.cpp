@@ -81,49 +81,6 @@ Object* SceneGraph::getObjectAtPosition(Vec3 pos)
 }
 
 //------------------------------------------------------
-// material
-//------------------------------------------------------
-
-Material::Material()
-{
-    ambient = Color(1,1,1);
-    diffuse = Color(1,1,1);
-    specular = Color(1,1,1);
-    emission = Color(0,0,0);
-    shininess = 40;
-    textureId = 0;
-    disableLighting = false;
-};
-
-void Material::Apply(void)
-{
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient.values);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse.values);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular.values);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission.values);
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
-
-    if (diffuse.a != 1.0) {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    } else {
-        glDisable(GL_BLEND);
-    }
-
-    if (textureId) 
-    {
-        glEnable(GL_TEXTURE_2D);
-        if (disableLighting) 
-            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);	
-        else
-            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);	
-        glBindTexture(GL_TEXTURE_2D, textureId);
-    } else {
-        glDisable(GL_TEXTURE_2D);
-    }
-}
-
-//------------------------------------------------------
 // objects
 //------------------------------------------------------
 

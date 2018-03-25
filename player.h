@@ -11,6 +11,7 @@ public:
 
     float yAngle = 0.0;
     float vVel = 0.0;
+    float height = 1.2;
 
     SceneGraph* graph;
 

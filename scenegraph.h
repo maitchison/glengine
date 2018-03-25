@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "stdinc.h"
+#include "material.h"
 
 class Object;
 class Camera;
@@ -55,24 +56,6 @@ public:
 	Camera();
 
 };
-
-class Material
-{
-public:
-    Color ambient;
-    Color diffuse;
-    Color specular;
-    Color emission;
-    float shininess;
-    GLuint textureId;
-    bool disableLighting;    
-public:
-    Material();
-    Material(Color color) : Material() { ambient = diffuse = color; };
-    Material(GLuint textureId) : Material() { this->textureId = textureId; };
-    void Apply(void);
-};
-
 
 class Object
 {
