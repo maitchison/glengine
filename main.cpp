@@ -50,6 +50,8 @@ int frameOn = 0;
 
 // records if key is down
 bool key[256];
+// this handle special keys
+bool specialKey[256];
 
 GLuint grass_texture;
 GLuint water_texture;
@@ -78,6 +80,7 @@ float vVel = 0.0;
 
 const int CM_PLAYER = 0;
 const int CM_SECURITY = 1;
+const int CM_BIRD = 2;
 
 const int RM_NORMAL = 0;
 const int RM_OVERLAY_WIRE = 1;
@@ -351,11 +354,11 @@ void display(void)
 void updateInput()
 {
     float moveSpeed = 0.1f;
-    float turnSpeed = 0.05f;
-    if (key['w']) player.moveForward(moveSpeed);
-    if (key['s']) player.moveForward(-moveSpeed);
-	if (key['q']) player.turn(-turnSpeed);
-    if (key['e']) player.turn(+turnSpeed);
+    float turnSpeed = 0.05f;    
+    if (key['w'] || specialKey[GLUT_KEY_UP]) player.moveForward(moveSpeed);
+    if (key['s'] || specialKey[GLUT_KEY_DOWN]) player.moveForward(-moveSpeed);
+	if (key['q'] || specialKey[GLUT_KEY_LEFT]) player.turn(-turnSpeed);
+    if (key['e'] || specialKey[GLUT_KEY_RIGHT]) player.turn(+turnSpeed);
     if (key['a']) player.pan(-moveSpeed);
     if (key['d']) player.pan(+moveSpeed);
     if (key['c']) player.height = 0.5; else player.height = 1.2;
@@ -399,6 +402,13 @@ void update(void)
             camera.z = -2.5;
             camera.yAngle = sin(currentTime / 2) * 0.6 + 4;
             camera.xAngle = -0.1;
+            break;
+        case CM_BIRD:
+            // sit just behind bird
+            camera.yAngle = (bird->rotation.z + 180) * (M_PI/180);            
+            camera.x = bird->position.x - sin(camera.yAngle) * 0.5;
+            camera.y = bird->position.y+0.03f;
+            camera.z = bird->position.z + cos(camera.yAngle) * 0.5;            
             break;
     }
 
@@ -445,9 +455,10 @@ void keyboardDown(unsigned char code, int x, int y)
 void keyboardSpecialDown(int code, int x, int y)
 {
     // process special function keys.
+    specialKey[code & 0xff] = true;
     switch (code) {
         case GLUT_KEY_F1:            
-            cameraMode = (cameraMode + 1) % 2;
+            cameraMode = (cameraMode + 1) % 3;
             printf("Switching camera mode to %d\n", cameraMode);
             break;
         case GLUT_KEY_F2:            
@@ -478,17 +489,23 @@ void keyboardUp(unsigned char code, int x, int y)
     key[code] = false;
 }
 
+void keyboardSpecialUp(int code, int x, int y)
+{
+    specialKey[code & 0xff] = false;
+}
+
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 	glutInitWindowPosition(0, 0);
-	glutCreateWindow("MYHOUSE");
+	glutCreateWindow("Lighthouse");
 	initialize();
 	glutDisplayFunc(display);
 	glutIdleFunc(update);
     glutSpecialFunc(keyboardSpecialDown);
+    glutSpecialUpFunc(keyboardSpecialUp);
 	glutKeyboardFunc(keyboardDown);
     glutKeyboardUpFunc(keyboardUp);
     glutMainLoop();

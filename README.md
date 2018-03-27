@@ -23,6 +23,9 @@ F1 change camera view
 F2 switch day / night lighting
 F3 change render mode
 F4 enable flying (press space repeatedly to fly)
+F5 toggle HQ / LQ mode
 
+## Known bugs
 
+Compiling on MAC requires changing the linking options.  This also seems to change the random number generator causing a different height field from what is intended.
 
