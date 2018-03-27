@@ -42,7 +42,7 @@ void loadFile(std::vector<unsigned char>& buffer, const std::string& filename) /
 
 // modified from https://stackoverflow.com/questions/12084889/how-can-i-use-a-texture-jpg-image-for-an-opengl-background-window-in-mac
 GLuint loadTexture(char* filename)
-{	
+{	    
 	//load and decode
 	std::vector<unsigned char> buffer, image;
 	loadFile(buffer, filename);
@@ -67,8 +67,9 @@ GLuint loadTexture(char* filename)
     glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
 	
-
 	glBindTexture(GL_TEXTURE_2D, 0);
+
+    printf("Loaded %s\n", filename);
 
 	return texture;
 }

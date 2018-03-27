@@ -1,4 +1,11 @@
 /*
+--------------------------------------------------
+OpenGL 2.0 Engine by Matthew Aitchison
+Date: March 2018
+
+please build on Linux with
+
+g++ -std=c++11 -w -o glengine.exe main.cpp utils.cpp material.cpp scenegraph.cpp customobjects.cpp -lGL -lGLU -lglut && ./glengine.exe
 
 Animated objects
 
@@ -8,29 +15,16 @@ Animated objects
 4. Vase (surface of revolution, maybe it spins?)
 5. Opening Chest
 
-today:
+Resources used
 
-[done] build house
-[done] surface of revolution
-[done] skybox
-[done] put 5 objects in house
+earth texture:  UC Lab3
+moon texture:   http://Textures.com
+grass texture:  http://Textures.com
+water texture:  http://Textures.com
+sand texture:   http://Textures.com
+dirt texture:   http://Textures.com
+skybox          https://reije081.home.xs4all.nl/skyboxes/
 
-
-[done] collision detection
-[done] trilinear filtering
-[done] collisions and simple physics
-[done] camera modes
-
-[...] rotating spotlight on lighthouse
-[...] simple shadows ?
-
-*/
-
-/*
-Sources
-earth: lab3
-moon: texture.com
-Skybox is from https://reije081.home.xs4all.nl/skyboxes/ [edited]
 */
 
 #include "stdinc.h"

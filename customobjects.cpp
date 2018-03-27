@@ -336,7 +336,7 @@ float WaterPlane::sample(float x, float y)
         (3*sin(x*5.124 + timer * 5.0/16)+
         3*sin(y*2.124 - timer * 3.0/16)+
         // high freq weak
-        sin(x-41.24 + timer * 7.0/16)+
+        sin(x*-41.24 + timer * 7.0/16)+
         sin(y*61.24 - timer * 11.0/16)) * 0.2;            
 }
 
