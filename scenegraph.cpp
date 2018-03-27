@@ -5,25 +5,27 @@
 
 Material DEFAULT_MATERIAL = Material();
 
+int DIVISONS_MULTIPLIER = 1;
+
 //------------------------------------------------------
 // helper functions
 //------------------------------------------------------
 
 void drawSubdividedQuad(int divisionsX, int divisionsY) 
 {
-    for (int y = 0; y < (divisionsY-1); y++)
+    for (int y = 0; y < (divisionsY); y++)
     {
         float s;
         float t;        
         
         glBegin(GL_QUAD_STRIP);
-        for (int x = 0; x < divisionsX; x++) {
-            s = (float)x / (divisionsX-1);
-            t = (float)y / (divisionsY-1);    
+        for (int x = 0; x < divisionsX+1; x++) {
+            s = (float)x / (divisionsX);
+            t = (float)y / (divisionsY);                
             glTexCoord2f(s,t);
             glNormal3f(0,1,0);
             glVertex3f(s-0.5, 0, t-0.5);
-            t = ((float)y+1) / (divisionsY-1);    
+            t = ((float)y+1) / (divisionsY);    
             glTexCoord2f(s,t);
             glNormal3f(0,1,0);
             glVertex3f(s-0.5, 0, t-0.5);
@@ -45,19 +47,41 @@ void SceneGraph::AddLight(Light* light)
     lights.push_back(light);
 }
 
-void SceneGraph::Render(Camera camera)
+void SceneGraph::Render(Camera camera, bool renderSolid, bool renderWire)
 {
     camera.apply();
 
     for (int i = 0; i < lights.size(); i++)
     {
+        // this doesn't actually draw the lights, just places them.
+        lights[i]->Update(0);
         lights[i]->Draw();
     }
+    
+    glEnable(GL_CULL_FACE);
 
-    for (int i = 0; i < objects.size(); i++)
-    {
-        objects[i]->Draw();
+    // draw the scene normally
+    if (renderSolid) {
+        Material::M_ENABLE_TEXTURE = true;
+        glPolygonMode(GL_FRONT,GL_FILL);    
+        glEnable(GL_LIGHTING);        
+        for (int i = 0; i < objects.size(); i++) objects[i]->Draw();    
     }
+
+    if (renderWire) {
+        // draw again but with edges, and shift the depth values forward a little.
+        Material::M_ENABLE_TEXTURE = false;
+        
+        glPolygonOffset(-0.1,-0.1);
+        glEnable(GL_POLYGON_OFFSET_LINE);
+        glDisable(GL_LIGHTING);
+        
+        glPolygonMode(GL_FRONT,GL_LINE);    
+        for (int i = 0; i < objects.size(); i++) objects[i]->Draw();
+
+        glDisable(GL_POLYGON_OFFSET_LINE);
+    }
+
 }
 
 void SceneGraph::Update(float elapsed)
@@ -163,13 +187,13 @@ void Object::updateObject(float elapsed)
 }
 
 void Cube::drawObject(void)
-{
+{    
     // custom subdivided cube with texture co-rds
     for (int i = 0; i < 4; i ++) {
         glPushMatrix();
         glRotatef(90*i,1,0,0);
         glTranslatef(0,0.5,0);
-        drawSubdividedQuad(2,2);
+        drawSubdividedQuad(divisionsX * DIVISONS_MULTIPLIER,divisionsY * DIVISONS_MULTIPLIER);
         glPopMatrix();        
     }
 
@@ -178,12 +202,12 @@ void Cube::drawObject(void)
     glPushMatrix();
     glRotatef(90,0,0,1);
     glTranslatef(0,0.5,0);
-    drawSubdividedQuad(2,2);
+    drawSubdividedQuad(divisionsX * DIVISONS_MULTIPLIER,divisionsY * DIVISONS_MULTIPLIER);
     glPopMatrix();
     glPushMatrix();
     glRotatef(-90,0,0,1);
     glTranslatef(0,0.5,0);
-    drawSubdividedQuad(2,2);
+    drawSubdividedQuad(divisionsX * DIVISONS_MULTIPLIER,divisionsY * DIVISONS_MULTIPLIER);
     glPopMatrix();
     
 }
@@ -212,12 +236,31 @@ void Light::drawObject(void)
     glLightfv(lightid, GL_AMBIENT, lightAmbient);
     glLightfv(lightid, GL_DIFFUSE, lightColor);
     glLightfv(lightid, GL_SPECULAR, lightSpec);
-    glLightf(lightid, GL_SPOT_CUTOFF, 180.0f); //omni    
+
+    if (spot) {
+        glLightf(lightid, GL_SPOT_CUTOFF, 15.0f); //spot    
+        glLightf(lightid, GL_SPOT_EXPONENT, 10.0f);
+        float spotDirection[4] = {0.8,-1,0,0};
+        glLightfv(lightid, GL_SPOT_DIRECTION, spotDirection);
+    }
+    else {
+        glLightf(lightid, GL_SPOT_CUTOFF, 180.0f); //omni    
+    }
+    
+    
     
     if (attenuate)
-        glLightf(lightid, GL_LINEAR_ATTENUATION, 1.0);
+        glLightf(lightid, GL_LINEAR_ATTENUATION, 0.5);
     else
         glLightf(lightid, GL_LINEAR_ATTENUATION, 0);                
+}
+
+void Light::updateObject(float elapsed)
+{
+    if (visible)
+        glEnable(lightid);
+    else
+        glDisable(lightid);
 }
 
 void Quad::drawObject(void)
@@ -271,42 +314,48 @@ void SurfaceOfRevolution::drawObject(void)
 
     for (int j = 0; j < (n-1); j++) {
         glBegin(GL_QUAD_STRIP);            
+
+        // note the normal calculation here is not quite right, the y component needs adjusting.
+        // this should be hard to notice in many cases though.
         
         // cap a partialy swept surface
         if (sweepAngle != 360) {
             theta = (2.0 * M_PI * sweepAngle / 360.0);
-            x = sin(theta) * points[j].x;
-            z = cos(theta) * points[j].x;
-            y =  points[j].y;
-            abs2 = x*x+y*y+z*z;
-            abs = (abs2 == 0) ? 1 : sqrt(abs2);
-            glNormal3f(x/abs,y/abs,z/abs);
-            glVertex3f(x,y,z);
+
             x = sin(theta) * points[(j+1) % n].x;
             z = cos(theta) * points[(j+1) % n].x;
             y =  points[(j+1) % n].y;
             abs2 = x*x+y*y+z*z;
             abs = (abs2 == 0) ? 1 : sqrt(abs2);
-            glNormal3f(x/abs,y/abs,z/abs);
+            glNormal3f(x/abs,0,z/abs);
             glVertex3f(x,y,z);
-        }
-
-        for (int i = 0; i < slices; i++) {            
-            theta = (float)i / (slices-1) * (2.0 * M_PI * sweepAngle / 360.0);
             x = sin(theta) * points[j].x;
             z = cos(theta) * points[j].x;
             y =  points[j].y;
             abs2 = x*x+y*y+z*z;
             abs = (abs2 == 0) ? 1 : sqrt(abs2);
-            glNormal3f(x/abs,y/abs,z/abs);
-            glVertex3f(x,y,z);
+            glNormal3f(x/abs,0,z/abs);
+            glVertex3f(x,y,z);            
+        }
+
+        for (int i = 0; i < slices; i++) {            
+            theta = (float)i / (slices-1) * (2.0 * M_PI * sweepAngle / 360.0);
+            
             x = sin(theta) * points[(j+1) % n].x;
             z = cos(theta) * points[(j+1) % n].x;
             y =  points[j+1].y;
             abs2 = x*x+y*y+z*z;
             abs = (abs2 == 0) ? 1 : sqrt(abs2);
-            glNormal3f(x/abs,y/abs,z/abs);
+            glNormal3f(x/abs,0,z/abs);
             glVertex3f(x,y,z);
+            x = sin(theta) * points[j].x;
+            z = cos(theta) * points[j].x;
+            y =  points[j].y;
+            abs2 = x*x+y*y+z*z;
+            abs = (abs2 == 0) ? 1 : sqrt(abs2);
+            glNormal3f(x/abs,0,z/abs);
+            glVertex3f(x,y,z);
+            
         }        
         
 

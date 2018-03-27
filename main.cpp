@@ -8,12 +8,6 @@ Animated objects
 4. Vase (surface of revolution, maybe it spins?)
 5. Opening Chest
 
-Modes:
-flying / walking
-pov / camera
-
-
-
 today:
 
 [done] build house
@@ -23,30 +17,19 @@ today:
 
 
 [done] collision detection
-simple shadows
+[done] trilinear filtering
+[done] collisions and simple physics
+[done] camera modes
 
-[trilinear filtering]
-[show mip maps mode]
-
-later (for fun):
-proper day / night cycle
-physics based movement (i.e. jumping, walking up blocks etc)
-
-
-
-roaming animals (turtles and birds)
-graphic for sun (just a yellow sphere)
-alternative camera view (from turtles perspective)
-
-resources
-earth: lab3
-moon: texture.com
+[...] rotating spotlight on lighthouse
+[...] simple shadows ?
 
 */
 
 /*
 Sources
-
+earth: lab3
+moon: texture.com
 Skybox is from https://reije081.home.xs4all.nl/skyboxes/ [edited]
 */
 
@@ -71,8 +54,10 @@ bool key[256];
 GLuint grass_texture;
 GLuint water_texture;
 GLuint sand_texture;
+GLuint dirt_texture;
 GLuint globe_texture;
 GLuint moon_texture;
+
 siv::PerlinNoise noise = siv::PerlinNoise(123);
 
 const int SCREEN_WIDTH = 800;
@@ -83,14 +68,28 @@ SceneGraph graph = SceneGraph();
 Player player = Player(&graph);
 Light* sunLight;
 Light* cameraLight;
+Light* spotLight;
+
+Object* skybox;
 Object* bird;
+WaterPlane* ocean;
 
 float vVel = 0.0;
 
 const int CM_PLAYER = 0;
 const int CM_SECURITY = 1;
 
+const int RM_NORMAL = 0;
+const int RM_OVERLAY_WIRE = 1;
+const int RM_WIRE = 2;
+
+const int LM_DAY = 0;
+const int LM_NIGHT = 1;
+
 int cameraMode = CM_PLAYER;
+int renderMode = RM_NORMAL;
+int lightsMode = LM_DAY;
+bool hqMode = false;
 
 GLuint texId[6];
 
@@ -101,6 +100,7 @@ void initTextures(void)
     globe_texture = loadTexture("earth.png");
 	moon_texture = loadTexture("moon.png");    
     sand_texture = loadTexture("sand.png");    
+    dirt_texture = loadTexture("dirt.png");    
 }
 
 void loadSkyBoxTexture(char* filename, GLuint texId)
@@ -127,7 +127,8 @@ void initSkyBox()
 	loadSkyBoxTexture("sky_top.tga", texId[4]);
 	loadSkyBoxTexture("sky_down.tga", texId[5]);
 
-    graph.Add(new Skybox(texId));
+    skybox = new Skybox(texId);
+    graph.Add(skybox);
 
 }
 
@@ -206,6 +207,12 @@ void initLights(void)
     cameraLight->color = Color(1,1,1);
     cameraLight->attenuate = true;
 	graph.AddLight(cameraLight);
+
+    spotLight = new Light(GL_LIGHT2);
+    spotLight->color = Color(1,1,0.5);
+    spotLight->spot = true;
+    spotLight->position = Vec3(1.5, 25, 0.5);
+	graph.AddLight(spotLight);
     
 }
 
@@ -217,9 +224,9 @@ void initTerrain(void)
 	// sand is used for water level.
 
 	Material* grass = new Material(grass_texture);
-	Material* dirt = new Material(Color(0x996633));
+	Material* dirt = new Material(dirt_texture);
 	Material* sand = new Material(sand_texture);
-	Material* water = new Material(Color(0x2964c4));
+	Material* water = new Material(water_texture);
 
     water->diffuse.a = 0.95f;	
 
@@ -242,8 +249,9 @@ void initTerrain(void)
 				cube->material = sand;
                 cube->solid = true;
 				terrain->Add(cube);
+            
 			} else {
-				// grass on top, dirt under neith
+				// grass on top, dirt under 
 				Cube* cube = new Cube();
 				cube->position = Vec3(x-20,height,z-20);
 				cube->material = grass;
@@ -256,6 +264,18 @@ void initTerrain(void)
                 cube->solid = true;
 				terrain->Add(cube);
 			}
+
+            // add a little depth around the boarder
+            if (x == 0 || z == 0 || x == 40 || z == 40) {
+                for (int y = height-1; y > -5; y--) {
+                    Cube* cube = new Cube();
+                    cube->position = Vec3(x-20,y,z-20);
+                    cube->material = sand;
+                    cube->solid = true;
+                    terrain->Add(cube);
+                }                    
+            }
+
 		}
 	}
     
@@ -264,13 +284,13 @@ void initTerrain(void)
     graph.Add(terrain);
 
 	// add water plane
-	Plane* ocean = new WaterPlane();
-	ocean->position = Vec3(0,-3,0);
-	ocean->scale = Vec3(200,1,200);
+	ocean = new WaterPlane();
+	ocean->position = Vec3(0,-4,0);
+	ocean->scale = Vec3(200,2,200);
     ocean->material = water;
     ocean->divisionsX = 64;
     ocean->divisionsY = 64;
-	graph.Add(ocean);
+    graph.Add(ocean);
 
     // add safety floor (so we don't fall through)
     Object* floor = new Cube(200,2,200);
@@ -291,14 +311,13 @@ void initHouse(void)
 
 void initPlayer()
 {
-    //player.position = Vec3(7.37, 1.0, 1.5);
-    player.position = Vec3(7.37, 5.0, 1.5);
+    player.position = Vec3(11, 5.0, 1.2);
     player.yAngle = -20;    
 }
 
 void initialize(void)
 {
-	glClearColor(0.1f, 0.0f, 0.5f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.1f, 1.0f);
 	glEnable(GL_DEPTH);
 	glEnable(GL_DEPTH_TEST);
     glEnable(GL_NORMALIZE);
@@ -324,7 +343,7 @@ void display(void)
 	glLoadIdentity();
 	gluPerspective(70.0f, (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 2000);
 
-	graph.Render(camera);
+	graph.Render(camera, renderMode != RM_WIRE, renderMode != RM_NORMAL);
 
 	glutSwapBuffers();
 }
@@ -353,6 +372,11 @@ void update(void)
 		return;
 	}
 
+    // limit step to a tenth of a second.  Otherwise we get problems if the OS swaps us out for a few seconds.
+    if (elapsed > 0.1) {
+        elapsed = 0.1;
+	}
+
 	counter++;
 
 	if (counter % 100 == 0) {
@@ -377,6 +401,21 @@ void update(void)
             camera.xAngle = -0.1;
             break;
     }
+
+    // setup our lights
+    switch (lightsMode) {
+        case LM_DAY: 
+            sunLight->visible = true;
+            skybox->visible = true;
+            break;
+        case LM_NIGHT:
+            sunLight->visible = false;            
+            skybox->visible = false;
+            break;
+    }
+
+    // update spotlight
+    spotLight->rotation.y += elapsed * 10;
     
     graph.Update(elapsed);
 
@@ -391,6 +430,7 @@ void update(void)
 
     // update camera light position
     cameraLight->position = player.position;
+    cameraLight->position.y += player.height;
     
 	glutPostRedisplay();
 	lastFrameTime = currentTime;
@@ -400,17 +440,7 @@ void update(void)
 void keyboardDown(unsigned char code, int x, int y)
 {
     key[code] = true;
-
-    // process special function keys.
-    switch (code) {
-        case GLUT_KEY_F1:            
-            cameraMode = (cameraMode + 1) % 2;
-            printf("Switching camera mode to %d", cameraMode);
-            break;
-    }
-
 }
-
 
 void keyboardSpecialDown(int code, int x, int y)
 {
@@ -418,10 +448,29 @@ void keyboardSpecialDown(int code, int x, int y)
     switch (code) {
         case GLUT_KEY_F1:            
             cameraMode = (cameraMode + 1) % 2;
-            printf("Switching camera mode to %d", cameraMode);
+            printf("Switching camera mode to %d\n", cameraMode);
+            break;
+        case GLUT_KEY_F2:            
+            lightsMode = (lightsMode + 1) % 2;
+            printf("Switching lighting mode to %d\n", lightsMode);
+            break;
+        case GLUT_KEY_F3:            
+            renderMode = (renderMode + 1) % 3;
+            printf("Switching render mode to %d\n", renderMode);
+            break;
+        case GLUT_KEY_F4:            
+            player.flying = ! player.flying;
+            printf("Flying mode %d\n", player.flying);
+            break;
+        case GLUT_KEY_F5:            
+            hqMode = !hqMode;
+            printf("HQ mode %d\n", hqMode);
+            DIVISONS_MULTIPLIER = hqMode ? 3 : 1;
+            // ocean is actually really slow, need to optimize this more to increase the resolution.
+            ocean->divisionsX = ocean->divisionsY = hqMode ? 64 : 32;        
+	
             break;
     }
-
 }
 
 void keyboardUp(unsigned char code, int x, int y)

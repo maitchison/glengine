@@ -1,5 +1,7 @@
 #include "material.h"
 
+bool Material::M_ENABLE_TEXTURE = true;
+
 Material::Material()
 {
     ambient = Color(1,1,1);
@@ -26,7 +28,7 @@ void Material::Apply(void)
         glDisable(GL_BLEND);
     }
 
-    if (textureId) 
+    if (textureId && Material::M_ENABLE_TEXTURE) 
     {
         glEnable(GL_TEXTURE_2D);
 

@@ -184,8 +184,7 @@ void Chest::updateObject(float elapsed)
     float openness = sin(timer) * 2;
     if (openness < 0) openness = 0;
     if (openness > 1) openness = 1;
-    lid->rotation.x = openness * 90;
-    // todo: open and close animation for lid    
+    lid->rotation.x = openness * 90;    
 }
 
 
@@ -199,8 +198,10 @@ void House::block(Vec3 bottomLeft, Vec3 topRight, Material* material)
 {
     Vec3 mid = Vec3((bottomLeft.x + topRight.x) / 2, (bottomLeft.y + topRight.y) / 2, (bottomLeft.z + topRight.z) / 2);
     Vec3 size = Vec3(-(bottomLeft.x - topRight.x), -(bottomLeft.y - topRight.y), -(bottomLeft.z - topRight.z));
-    Object* block = new Cube();
+    Cube* block = new Cube();
     block->scale = size;
+    block->divisionsX = 4;
+    block->divisionsY = 4;
     block->position = mid;
     block->material = material;
     Add(block);
@@ -209,8 +210,10 @@ void House::block(Vec3 bottomLeft, Vec3 topRight, Material* material)
 void House::marker(Vec3 pos, Color color)
 {
     float size = 1;
-    Object* block = new Cube();
+    Cube* block = new Cube();
     block->scale = Vec3(size,size,size);
+    block->divisionsX = 4;
+    block->divisionsY = 4;
     block->position = pos;
     block->material = new Material();
     block->material->emission = color;
@@ -298,7 +301,7 @@ House::House()
     block(Vec3(0, 0,-3), Vec3(8,wallThickness, 3), wallMaterial);    
 
     // roof
-    block(Vec3(-0.2, 3+0.1,-3-0.2), Vec3(8+0.2,3-wallThickness, 3+0.2), wallMaterial);    
+    block(Vec3(-0.2, 3-wallThickness,-3-0.2), Vec3(8+0.2,3+0.1, 3+0.2), wallMaterial);    
 
     // pillars (cover the joins)
     Add(new Cylinder(Vec3(0,0,-3), wallThickness, 3));
@@ -311,11 +314,13 @@ House::House()
 // WaterPlane
 //---------------------------------------------------------------
 
+
 void WaterPlane::updateObject(float elapsed)
 {
     timer += elapsed;
 }
 
+// this is very slow :(.  I could precompute the sin table, or I could cache the sampling
 float WaterPlane::sample(float x, float y)
 {
     return 
@@ -419,18 +424,39 @@ GlobeAndMoon::GlobeAndMoon(GLuint globeTexture, GLuint moonTexture)
 {
     globe = new Sphere();
     moon = new Sphere();    
-    moon->position = Vec3(-2.2, 0, 0);
+    moon->position = Vec3(-2.2, 1, 0);
     moon->scale = Vec3(0.5,0.5,0.5);
     Add(globe);
-    globe->Add(moon);
+    Add(moon);
     this->scale = Vec3(0.2,0.2,0.2);
     globe->material = new Material(globeTexture);
     moon->material = new Material(moonTexture);
-    globe->rotation.x = 90;
+    globe->rotation.x = 90;    
+
+    std::vector<Vec2> pnts = {
+        Vec2(0.5,0),
+        Vec2(0.2,0.1),
+        Vec2(0.1,0.2),
+        Vec2(0.05,0.3),
+        Vec2(0.03,1)
+    };
+    
+    Object* base = new SurfaceOfRevolution(pnts);
+    base->scale = Vec3(2,2,2);
+    base->position = Vec3(0,-1.5,0);
+    Add(base);
+
+    Object* rod = new Cylinder(0.1,2.5);
+    rod->rotation.x = -25;    
+    globe->Add(rod);
+
+
 }
 
 void GlobeAndMoon::updateObject(float elapsed)
 {
     globe->rotation.z += elapsed * 93;
-    moon->rotation.z += elapsed * 17;
+    moon->rotation.z = globe->rotation.z;
+    moon->position.x = 2.2*sin((M_PI/180)*-moon->rotation.z);
+    moon->position.z = 2.2*cos((M_PI/180)*-moon->rotation.z);
 }

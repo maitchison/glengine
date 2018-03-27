@@ -13,6 +13,8 @@ class Object;
 class Camera;
 class Light;
 
+extern int DIVISONS_MULTIPLIER;
+
 class SceneGraph
 {
 protected:
@@ -25,7 +27,7 @@ public:
     void AddLight(Light* light);
 
     /** Draws all objects in the given scenegraph as seen by this camera. */
-    void Render(Camera camera);
+    void Render(Camera camera, bool renderSolid = true, bool renderWire = false);
 
     /** Updates all objects animation over the given number seconds. */
     void Update(float elapsed);
@@ -144,9 +146,11 @@ protected:
     GLuint lightid;
     
     void drawObject(void) override;
+    void updateObject(float elapsed) override;
 
 public:
     bool attenuate = false;
+    bool spot = false;
 
     Light(GLuint lightid) : Object() { this->lightid = lightid; }
 };
@@ -158,7 +162,11 @@ public:
     Cube() : Object() {};
     Cube(float width, float height, float depth) : Cube() { this->scale = Vec3(width, height, depth); };
 
+    int divisionsX = 1;
+    int divisionsY = 1;
+
     virtual bool isInside(Vec3 pnt) { 
+        if (!solid) return false;
         pnt = worldToObject(pnt);
         if (
             (pnt.x < -0.5) || (pnt.x > 0.5) ||
@@ -245,3 +253,14 @@ public:
     }
 };
 
+
+class Cone: public SurfaceOfRevolution
+{
+public:
+    
+    Cone(float radius, float height) : SurfaceOfRevolution()
+    {
+        points.push_back(Vec2(0, 0));
+        points.push_back(Vec2(radius, height));        
+    }    
+};

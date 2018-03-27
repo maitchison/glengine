@@ -1,3 +1,5 @@
+#pragma once
+
 #include "stdinc.h"
 #include "scenegraph.h"
 
@@ -12,6 +14,8 @@ public:
     float yAngle = 0.0;
     float vVel = 0.0;
     float height = 1.2;
+
+    bool flying = false;
 
     SceneGraph* graph;
 
@@ -37,7 +41,7 @@ public:
 
     void jump()
     {
-        if (isTouchingGround) {
+        if (flying || isTouchingGround) {
             vVel = 9.0;
         }
     }
@@ -65,8 +69,7 @@ public:
         newPosition.y += vVel * elapsed;
         if (canMoveTo(newPosition)) {
             isTouchingGround = false;
-            position = newPosition;
-            
+            position = newPosition;            
         } else {
             isTouchingGround = true;
             // reset velocity on collision.

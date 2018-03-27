@@ -5,6 +5,10 @@
 class Material
 {
 public:
+    // enabled texturing 
+    static bool M_ENABLE_TEXTURE;
+
+public:
     Color ambient;
     Color diffuse;
     Color specular;
@@ -19,6 +23,4 @@ public:
     Material(Color color) : Material() { ambient = diffuse = color; };
     Material(GLuint textureId) : Material() { this->textureId = textureId; };
     void Apply(void);
-
-
 };
