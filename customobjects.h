@@ -5,8 +5,14 @@
 
 class Bird: public Object
 {
+protected:
+    float timer = 0;
+    Object* leftWing;
+    Object* rightWing;
+    void updateObject(float elapsed);    
 public:
     Bird();
+
 };
 
 class Turtle: public Object

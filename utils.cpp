@@ -53,7 +53,7 @@ GLuint loadTexture(char* filename)
 	if (error != 0) std::cout << "error: " << error << std::endl;
 
 	//the pixels are now in the vector "image", use it as texture, draw it, ...
-	if (image.size() > 4) std::cout << "width: " << w << " height: " << h << " first pixel: " << std::hex << int(image[0]) << int(image[1]) << int(image[2]) << int(image[3]) << std::endl;
+	//if (image.size() > 4) std::cout << "width: " << w << " height: " << h << " first pixel: " << std::hex << int(image[0]) << int(image[1]) << int(image[2]) << int(image[3]) << std::endl;
 
 	GLuint texture;
 	glGenTextures(1, &texture);

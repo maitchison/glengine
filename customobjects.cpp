@@ -78,7 +78,7 @@ Bird::Bird() : Object()
     Add(head);
 
     // wings
-    Object* leftWing = new Cube();            
+    leftWing = new Cube();            
     leftWing->position = Vec3(0.5, 0.35, 0.2);
     leftWing->material = new Material(Color(0.2, 0.6, 0.2));
     leftWing->scale = Vec3(0.15, 1.5, 0.75);                
@@ -86,7 +86,7 @@ Bird::Bird() : Object()
     leftWing->rotation.x = -155;
     Add(leftWing);
 
-    Object* rightWing = new Cube();            
+    rightWing = new Cube();            
     rightWing->position = Vec3(-0.5, 0.35, 0.2);
     rightWing->material = new Material(Color(0.2, 0.6, 0.2));
     rightWing->scale = Vec3(0.15, 1.5, 0.75);                
@@ -97,6 +97,14 @@ Bird::Bird() : Object()
     scale = Vec3(0.3,0.3,0.3);
 
 }
+
+
+void Bird::updateObject(float elapsed) {
+    timer += elapsed * 4;
+    leftWing->rotation.y = 110 + sin(timer) * 40;
+    rightWing->rotation.y = - 110 - sin(timer) * 40;
+}
+
 
 //---------------------------------------------------------------
 // Toy Lighthouse
